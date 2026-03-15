@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geist/v3/gyByhwUxId8gMEwcGFWNOITd.woff2) format('woff2');
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: transparent;
+  font-family: 'Geist', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.diagram {
+  position: relative;
+  height: 300px;
+  padding: 20px 0;
+}
+
+/* SVG lines layer */
+.lines {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+.lines polyline {
+  fill: none;
+  stroke: #FF5327;
+  stroke-width: 1.5;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.lines polyline.show { opacity: 1; }
+
+.lines .arrow {
+  fill: none;
+  stroke: #FF5327;
+  stroke-width: 1.5;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.lines .arrow.show { opacity: 1; }
+
+/* Transaction box */
+.tx-box {
+  position: absolute;
+  left: 8%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #FF5327;
+  color: #fff;
+  padding: 14px 22px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.tx-box.show { opacity: 1; }
+
+/* Batch output box */
+.batch-box {
+  position: absolute;
+  left: 32%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #fff;
+  border: 1.5px dashed #C0C0C0;
+  padding: 14px 22px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1A1A1A;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.batch-box.show { opacity: 1; }
+
+/* VTXO circles */
+.vtxo {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 1.5px dashed #C0C0C0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #575757;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.vtxo.show { opacity: 1; }
+
+/* Caption */
+.caption {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: #999;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  white-space: nowrap;
+}
+.caption.show { opacity: 1; }
+
+.caption-hl {
+  color: #FF5327;
+  font-weight: 600;
+}
+
+/* Dynamic lines SVG (for mobile) */
+.mobile-lines {
+  display: none;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.mobile-lines line {
+  stroke: #FF5327;
+  stroke-width: 1;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.mobile-lines line.show { opacity: 1; }
+
+@media (prefers-color-scheme: dark) {
+  body { background: #101013; }
+  .batch-box { background: #fff; }
+  .vtxo { background: #fff; }
+}
+
+@media (max-width: 640px) {
+  .diagram {
+    height: 260px;
+    padding: 10px 0 28px;
+  }
+  .lines { display: none; }
+  .mobile-lines { display: block; }
+
+  .tx-box {
+    left: 4%;
+    padding: 6px 8px;
+    font-size: 8px;
+  }
+  .batch-box {
+    left: 30%;
+    padding: 6px 10px;
+    font-size: 8px;
+  }
+  .vtxo {
+    width: 46px;
+    height: 46px;
+    font-size: 7px;
+  }
+  #v1 { right: 6% !important; top: 26px !important; }
+  #v2 { right: 6% !important; top: 80px !important; }
+  #v3 { right: 6% !important; top: 134px !important; }
+  #v4 { right: 6% !important; top: 188px !important; }
+  .caption {
+    font-size: 9px;
+    bottom: 4px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="diagram" id="diagram">
+  <!-- Desktop SVG lines -->
+  <svg class="lines" viewBox="0 0 700 300" preserveAspectRatio="xMidYMid meet">
+    <polyline id="l0" points="168,150 218,150" />
+    <polyline id="la" class="arrow" points="213,146 218,150 213,154" />
+    <polyline id="l1" points="345,150 400,150 400,44 480,44" />
+    <polyline id="l2" points="345,150 400,150 400,117 480,117" />
+    <polyline id="l3" points="345,150 400,150 400,190 480,190" />
+    <polyline id="l4" points="345,150 400,150 400,263 480,263" />
+    <polyline id="a1" class="arrow" points="475,40 480,44 475,48" />
+    <polyline id="a2" class="arrow" points="475,113 480,117 475,121" />
+    <polyline id="a3" class="arrow" points="475,186 480,190 475,194" />
+    <polyline id="a4" class="arrow" points="475,259 480,263 475,267" />
+  </svg>
+
+  <!-- Mobile SVG lines (drawn by JS) -->
+  <svg class="mobile-lines" id="mobileLines"></svg>
+
+  <div class="tx-box" id="txBox">Transaction</div>
+  <div class="batch-box" id="batchBox">Batch Output</div>
+
+  <div class="vtxo" id="v1" style="right: 14%; top: 8px;">VTXO 1</div>
+  <div class="vtxo" id="v2" style="right: 14%; top: 81px;">VTXO 2</div>
+  <div class="vtxo" id="v3" style="right: 14%; top: 154px;">VTXO 3</div>
+  <div class="vtxo" id="v4" style="right: 14%; top: 227px;">VTXO 4</div>
+
+  <div class="caption" id="caption">
+    <span class="caption-hl">1</span> onchain output &rarr; <span class="caption-hl">4</span> virtual UTXOs
+  </div>
+</div>
+
+<script>
+(function() {
+  var diagram = document.getElementById('diagram');
+  var isMobile = window.matchMedia('(max-width: 640px)').matches;
+
+  function show(id, delay) {
+    setTimeout(function() {
+      var el = document.getElementById(id);
+      if (el) el.classList.add('show');
+    }, delay);
+  }
+
+  function showMobileLine(index, delay) {
+    setTimeout(function() {
+      var lines = document.querySelectorAll('.mobile-lines line');
+      if (lines[index]) lines[index].classList.add('show');
+    }, delay);
+  }
+
+  function drawMobileLines() {
+    var svg = document.getElementById('mobileLines');
+    svg.innerHTML = '';
+    var batch = document.getElementById('batchBox');
+    var vtxos = [
+      document.getElementById('v1'),
+      document.getElementById('v2'),
+      document.getElementById('v3'),
+      document.getElementById('v4')
+    ];
+    var tx = document.getElementById('txBox');
+
+    var dRect = diagram.getBoundingClientRect();
+
+    // Line from tx to batch
+    var txR = tx.getBoundingClientRect();
+    var bR = batch.getBoundingClientRect();
+    var txLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    txLine.setAttribute('x1', txR.right - dRect.left);
+    txLine.setAttribute('y1', txR.top + txR.height / 2 - dRect.top);
+    txLine.setAttribute('x2', bR.left - dRect.left);
+    txLine.setAttribute('y2', bR.top + bR.height / 2 - dRect.top);
+    svg.appendChild(txLine);
+
+    // Lines from batch to each VTXO (angular: horizontal then vertical then horizontal)
+    var batchRight = bR.right - dRect.left;
+    var batchMidY = bR.top + bR.height / 2 - dRect.top;
+    var midX = batchRight + (vtxos[0].getBoundingClientRect().left - dRect.left - batchRight) / 2;
+
+    vtxos.forEach(function(v) {
+      var vR = v.getBoundingClientRect();
+      var vLeft = vR.left - dRect.left;
+      var vMidY = vR.top + vR.height / 2 - dRect.top;
+
+      // Horizontal from batch
+      var l1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      l1.setAttribute('x1', batchRight);
+      l1.setAttribute('y1', batchMidY);
+      l1.setAttribute('x2', midX);
+      l1.setAttribute('y2', batchMidY);
+      svg.appendChild(l1);
+
+      // Vertical
+      var l2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      l2.setAttribute('x1', midX);
+      l2.setAttribute('y1', batchMidY);
+      l2.setAttribute('x2', midX);
+      l2.setAttribute('y2', vMidY);
+      svg.appendChild(l2);
+
+      // Horizontal to VTXO
+      var l3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      l3.setAttribute('x1', midX);
+      l3.setAttribute('y1', vMidY);
+      l3.setAttribute('x2', vLeft);
+      l3.setAttribute('y2', vMidY);
+      svg.appendChild(l3);
+    });
+  }
+
+  function runDesktop() {
+    show('txBox', 200);
+    show('l0', 500);
+    show('la', 500);
+    show('batchBox', 700);
+    show('l1', 1000);
+    show('a1', 1000);
+    show('v1', 1100);
+    show('l2', 1200);
+    show('a2', 1200);
+    show('v2', 1300);
+    show('l3', 1400);
+    show('a3', 1400);
+    show('v3', 1500);
+    show('l4', 1600);
+    show('a4', 1600);
+    show('v4', 1700);
+    show('caption', 2000);
+  }
+
+  function runMobile() {
+    show('txBox', 200);
+    show('batchBox', 500);
+    show('v1', 800);
+    show('v2', 900);
+    show('v3', 1000);
+    show('v4', 1100);
+    show('caption', 1400);
+
+    // Draw lines after elements are visible and positioned
+    setTimeout(function() {
+      drawMobileLines();
+      var lines = document.querySelectorAll('.mobile-lines line');
+      lines.forEach(function(l, i) {
+        setTimeout(function() { l.classList.add('show'); }, i * 60);
+      });
+    }, 600);
+  }
+
+  function run() {
+    if (isMobile) {
+      runMobile();
+    } else {
+      runDesktop();
+    }
+  }
+
+  if (typeof IntersectionObserver !== 'undefined') {
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { obs.disconnect(); run(); }
+    }, { threshold: 0.3 });
+    obs.observe(diagram);
+  } else {
+    run();
+  }
+})();
+</script>
+</body>
+</html>

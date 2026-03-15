@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Arkade Logo Morph</title>
+<style>
+  :root { --logo-color: #391998; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+  #capture {
+    width: 800px;
+    height: 800px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+  }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<div id="capture">
+  <svg id="logo" width="500" height="500" viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g id="paths" style="opacity:1; transition:none">
+      <path d="M0 8.75L8.75 0H26.25L35 8.75V17.5H26.25V8.75H8.75V17.5H2.45431e-07L0 8.75Z" fill="var(--logo-color)"/>
+      <path d="M8.75 26.25V17.5H26.25V26.25H8.75Z" fill="var(--logo-color)"/>
+      <path d="M8.75 26.25H2.45431e-07V35H8.75V26.25Z" fill="var(--logo-color)"/>
+      <path d="M26.25 26.25V35H35V26.25H26.25Z" fill="var(--logo-color)"/>
+    </g>
+    <g id="pixels"></g>
+  </svg>
+</div>
+
+<script>
+const GRID = 8;
+const CELL = 35 / GRID;
+const GAP = 0.3;
+const MORPH_MS = 700;          // slower morph
+const SCALE_CLOSED = CELL / (CELL - GAP);
+
+function parseShape(str) {
+  const pixels = [];
+  str.trim().split('\n').forEach((line, row) => {
+    line.trim().split('').forEach((ch, col) => {
+      if (ch === 'X') pixels.push({ x: col, y: row });
+    });
+  });
+  return pixels;
+}
+
+// --- Shape definitions (all 34 pixels) ---
+
+// Arkade logo — matches the SVG paths more closely:
+// top arch spans full width at row 1, narrows at row 0,
+// open middle at rows 2-3, crossbar at 4-5, two feet at 6-7
+const logoShape = parseShape(`
+  ..XXXX..
+  .XXXXXX.
+  XX....XX
+  XX....XX
+  ..XXXX..
+  ..XXXX..
+  XX....XX
+  XX....XX
+`);
+
+// Space invader
+const invaderShape = parseShape(`
+  ..X..X..
+  ...XX...
+  ..XXXX..
+  .XX..XX.
+  XXXXXXXX
+  X.XXXX.X
+  X.X..X.X
+  .X.XX.X.
+`);
+
+// Heart
+const heartShape = parseShape(`
+  .XX..XX.
+  XXXXXXXX
+  XXXXXXXX
+  .XXXXXX.
+  ..XXXX..
+  ...XX...
+  ...XX...
+  ........
+`);
+
+// --- Optimal pixel assignment ---
+// Greedy nearest-neighbor: reorder target so each pixel travels minimal distance
+function optimizeMapping(source, target) {
+  const reordered = new Array(target.length);
+  const used = new Set();
+
+  // For each source pixel, find the closest unused target pixel
+  for (let i = 0; i < source.length; i++) {
+    let bestDist = Infinity;
+    let bestIdx = -1;
+    for (let j = 0; j < target.length; j++) {
+      if (used.has(j)) continue;
+      const dx = source[i].x - target[j].x;
+      const dy = source[i].y - target[j].y;
+      const dist = dx * dx + dy * dy;
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = j;
+      }
+    }
+    used.add(bestIdx);
+    reordered[i] = target[bestIdx];
+  }
+  return reordered;
+}
+
+// Build optimized shape sequence:
+// logo (canonical order) → invader (reordered to match logo) → heart (reordered to match invader)
+// Also ensure heart → logo loop is smooth by doing a second pass
+const shapes = [logoShape];
+shapes[1] = optimizeMapping(shapes[0], invaderShape);
+shapes[2] = optimizeMapping(shapes[1], heartShape);
+
+// Refine: also optimize the logo ordering for the heart→logo return transition
+// Do a few rounds to settle
+for (let round = 0; round < 3; round++) {
+  shapes[0] = optimizeMapping(shapes[2], logoShape);
+  shapes[1] = optimizeMapping(shapes[0], invaderShape);
+  shapes[2] = optimizeMapping(shapes[1], heartShape);
+}
+
+const NUM = shapes[0].length;
+
+// --- SVG setup ---
+const svgNS = 'http://www.w3.org/2000/svg';
+const pixelsG = document.getElementById('pixels');
+const pathsG = document.getElementById('paths');
+const origin = `${(CELL - GAP) / 2}px ${(CELL - GAP) / 2}px`;
+
+const rects = [];
+for (let i = 0; i < NUM; i++) {
+  const rect = document.createElementNS(svgNS, 'rect');
+  rect.setAttribute('width', CELL - GAP);
+  rect.setAttribute('height', CELL - GAP);
+  rect.setAttribute('rx', 0.6);
+  rect.setAttribute('fill', 'var(--logo-color)');
+  rect.style.transformOrigin = origin;
+  rect.style.opacity = 0;
+  pixelsG.appendChild(rect);
+  rects.push(rect);
+}
+
+function setPixels(shapeIdx, { opacity = 1, scale = 1, transition = '' } = {}) {
+  const shape = shapes[shapeIdx];
+  rects.forEach((rect, i) => {
+    rect.style.transition = transition;
+    rect.style.transform = `translate(${shape[i].x * CELL}px, ${shape[i].y * CELL}px) scale(${scale})`;
+    rect.style.opacity = opacity;
+  });
+}
+
+function setPaths({ opacity = 1, transition = 'none' } = {}) {
+  pathsG.style.opacity = opacity;
+  pathsG.style.transition = transition;
+}
+
+function wait(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// Smooth easing — less bouncy than original
+const easeSmooth = `cubic-bezier(0.25, 0.1, 0.25, 1.0)`;
+const easeOut = `cubic-bezier(0.0, 0.0, 0.2, 1.0)`;
+
+async function loop() {
+  const morphT = `transform ${MORPH_MS}ms ${easeSmooth}`;
+  const morphRevert = `transform ${MORPH_MS}ms ${easeOut}, opacity ${MORPH_MS * 0.7}ms ease-out`;
+
+  const PIXELATE_MS = 500;
+
+  while (true) {
+    // Settled: show clean SVG paths
+    setPaths({ opacity: 1 });
+    setPixels(0, { opacity: 0, scale: 1, transition: 'none' });
+    await wait(1400);
+
+    // Pixelate: crossfade solid SVG → pixel grid at logo positions
+    setPixels(0, { opacity: 1, scale: 1, transition: `opacity ${PIXELATE_MS}ms ease-in-out` });
+    setPaths({ opacity: 0, transition: `opacity ${PIXELATE_MS}ms ease-in-out` });
+    await wait(PIXELATE_MS + 100);
+
+    // Hold pixelated logo briefly
+    await wait(400);
+
+    // Morph logo → space invader
+    setPixels(1, { opacity: 1, scale: 1, transition: morphT });
+    await wait(MORPH_MS + 200);
+
+    // Hold invader
+    await wait(1400);
+
+    // Morph invader → heart
+    setPixels(2, { opacity: 1, scale: 1, transition: morphT });
+    await wait(MORPH_MS + 200);
+
+    // Hold heart
+    await wait(1400);
+
+    // Revert: morph heart → logo pixels, scale up to close gaps, crossfade back to solid SVG
+    setPixels(0, { opacity: 0, scale: SCALE_CLOSED, transition: morphRevert });
+    setPaths({ opacity: 1, transition: `opacity ${PIXELATE_MS}ms ease-in-out ${MORPH_MS * 0.3}ms` });
+    await wait(MORPH_MS + 200);
+
+    // Brief pause before next loop
+    await wait(1200);
+  }
+}
+
+loop();
+</script>
+</body>
+</html>

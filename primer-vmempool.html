@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geist/v3/gyByhwUxId8gMEwcGFWNOITd.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geistmono/v3/or3yQ6H81JOCPFhYqdDhrClU5lLDA2a8iBMX.woff2) format('woff2');
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: transparent;
+  font-family: 'Geist', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #E8E8E8;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: #FAFAFA;
+  gap: 10px;
+  border-bottom: 1px solid #E8E8E8;
+}
+
+.logo {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+}
+
+.card-title {
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px;
+  color: #999;
+  flex: 1;
+  letter-spacing: 0.02em;
+}
+
+.badge {
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: #381993;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dag-area {
+  position: relative;
+  height: 220px;
+  padding: 20px 24px;
+  background: #fff;
+}
+
+.dag-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+.dag-svg line {
+  stroke: #EBEBEB;
+  stroke-width: 1;
+  transition: stroke 0.4s ease;
+}
+.dag-svg line.active { stroke: #381993; stroke-width: 1.5; }
+.dag-svg line.done { stroke: #381993; stroke-width: 1; opacity: 0.3; }
+
+.node {
+  position: absolute;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid #EBEBEB;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  z-index: 2;
+}
+
+.node .label {
+  font-family: 'Geist Mono', monospace;
+  font-size: 8px;
+  font-weight: 500;
+  color: #999;
+  transition: color 0.3s ease;
+  user-select: none;
+}
+
+.node .check { display: none; width: 10px; height: 10px; }
+
+.node.queued { background: #FAFAFA; border-color: #EBEBEB; }
+
+.node.executing {
+  background: #381993;
+  border-color: #381993;
+  box-shadow: 0 0 0 4px rgba(56,25,147,0.1);
+  transform: scale(1.1);
+}
+.node.executing .label { color: #fff; }
+
+.node.done {
+  background: #fff;
+  border-color: #381993;
+  transform: scale(1);
+  box-shadow: none;
+}
+.node.done .label { display: none; }
+.node.done .check { display: block; }
+
+.step-label {
+  position: absolute;
+  bottom: 6px;
+  font-size: 9px;
+  font-weight: 500;
+  color: #D8D8D8;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.4s ease, color 0.3s ease;
+  white-space: nowrap;
+}
+.step-label.show { opacity: 1; }
+.step-label.active-step { color: #381993; }
+.step-label.done-step { color: #999; }
+
+.footer {
+  border-top: 1px solid #E8E8E8;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.throughput {
+  font-size: 12px;
+  color: #999;
+  font-family: 'Geist Mono', monospace;
+}
+.throughput .count { font-weight: 600; color: #1A1A1A; }
+.throughput.final .count { color: #381993; }
+
+.progress-bar { display: flex; gap: 4px; align-items: center; }
+.progress-pip {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #EBEBEB;
+  transition: background 0.3s ease;
+}
+.progress-pip.active { background: #381993; }
+.progress-pip.done { background: #381993; opacity: 0.4; }
+
+@media (max-width: 640px) {
+  .dag-area { height: 160px; padding: 14px 16px; }
+  .node { width: 22px; height: 22px; }
+  .node .label { font-size: 7px; }
+  .card-title { font-size: 10px; }
+  .card-header { padding: 10px 12px; }
+  .footer { padding: 8px 12px; }
+  .throughput { font-size: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="card" id="panel">
+  <div class="card-header">
+    <svg class="logo" viewBox="0 0 35 35" fill="none">
+      <path d="M0 8.75L8.75 0H26.25L35 8.75V17.5H26.25V8.75H8.75V17.5H0L0 8.75Z" fill="#381993"/>
+      <path d="M8.75 26.25V17.5H26.25V26.25H8.75Z" fill="#381993"/>
+      <path d="M8.75 26.25H0V35H8.75V26.25Z" fill="#381993"/>
+      <path d="M26.25 26.25V35H35V26.25H26.25Z" fill="#381993"/>
+    </svg>
+    <span class="card-title">virtual_mempool::execute_dag</span>
+    <span class="badge">Parallel</span>
+  </div>
+
+  <div class="dag-area" id="dagArea">
+    <svg class="dag-svg" id="dagSvg"></svg>
+  </div>
+
+  <div class="footer">
+    <span class="throughput" id="throughput">
+      <span class="count" id="txCount">0</span> transactions in <span class="count" id="stepCount">0</span> steps
+    </span>
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var nodes = [
+    { id: 'tx1', x: 12, y: 20, deps: [] },
+    { id: 'tx2', x: 12, y: 50, deps: [] },
+    { id: 'tx3', x: 12, y: 80, deps: [] },
+    { id: 'tx4', x: 38, y: 15, deps: ['tx1'] },
+    { id: 'tx5', x: 38, y: 45, deps: ['tx1', 'tx2'] },
+    { id: 'tx6', x: 38, y: 75, deps: ['tx3'] },
+    { id: 'tx7', x: 62, y: 30, deps: ['tx4'] },
+    { id: 'tx8', x: 62, y: 60, deps: ['tx5', 'tx6'] },
+    { id: 'tx9', x: 88, y: 35, deps: ['tx7'] },
+    { id: 'tx10', x: 88, y: 65, deps: ['tx7', 'tx8'] }
+  ];
+
+  var waves = [
+    ['tx1', 'tx2', 'tx3'],
+    ['tx4', 'tx5', 'tx6'],
+    ['tx7', 'tx8'],
+    ['tx9', 'tx10']
+  ];
+
+  var totalSteps = waves.length;
+  var EXEC_DURATION = 600;
+  var WAVE_GAP = 300;
+  var INITIAL_DELAY = 500;
+
+  var dagArea = document.getElementById('dagArea');
+  var dagSvg = document.getElementById('dagSvg');
+  var txCountEl = document.getElementById('txCount');
+  var stepCountEl = document.getElementById('stepCount');
+  var progressBar = document.getElementById('progressBar');
+  var throughputEl = document.getElementById('throughput');
+  var panel = document.getElementById('panel');
+
+  for (var i = 0; i < totalSteps; i++) {
+    var pip = document.createElement('div');
+    pip.className = 'progress-pip';
+    pip.dataset.step = i;
+    progressBar.appendChild(pip);
+  }
+
+  var nodeEls = {};
+  nodes.forEach(function(n) {
+    var el = document.createElement('div');
+    el.className = 'node';
+    el.style.left = 'calc(' + n.x + '% - 14px)';
+    el.style.top = 'calc(' + n.y + '% - 14px)';
+
+    var label = document.createElement('span');
+    label.className = 'label';
+    label.textContent = n.id.replace('tx', '');
+    el.appendChild(label);
+
+    var check = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    check.setAttribute('class', 'check');
+    check.setAttribute('viewBox', '0 0 10 10');
+    check.setAttribute('fill', 'none');
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M2 5.5L4 7.5L8 3');
+    path.setAttribute('stroke', '#381993');
+    path.setAttribute('stroke-width', '1.5');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    check.appendChild(path);
+    el.appendChild(check);
+
+    dagArea.appendChild(el);
+    nodeEls[n.id] = el;
+  });
+
+  var edgeEls = [];
+
+  function getNodeCenter(n) {
+    return {
+      x: (n.x / 100) * dagArea.offsetWidth,
+      y: (n.y / 100) * dagArea.offsetHeight
+    };
+  }
+
+  function buildEdges() {
+    dagSvg.innerHTML = '';
+    edgeEls.length = 0;
+    nodes.forEach(function(n) {
+      n.deps.forEach(function(depId) {
+        var parent = nodes.find(function(nd) { return nd.id === depId; });
+        var from = getNodeCenter(parent);
+        var to = getNodeCenter(n);
+        var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', from.x);
+        line.setAttribute('y1', from.y);
+        line.setAttribute('x2', to.x);
+        line.setAttribute('y2', to.y);
+        line.dataset.from = depId;
+        line.dataset.to = n.id;
+        dagSvg.appendChild(line);
+        edgeEls.push(line);
+      });
+    });
+  }
+
+  buildEdges();
+  window.addEventListener('resize', buildEdges);
+
+  var stepXPositions = [12, 38, 62, 88];
+  var stepLabelEls = [];
+  stepXPositions.forEach(function(xPct, i) {
+    var lbl = document.createElement('div');
+    lbl.className = 'step-label';
+    lbl.style.left = 'calc(' + xPct + '% - 18px)';
+    lbl.textContent = 'Step ' + (i + 1);
+    dagArea.appendChild(lbl);
+    stepLabelEls.push(lbl);
+  });
+
+  var paused = false;
+  var started = false;
+  var finished = false;
+
+  panel.addEventListener('mouseenter', function() {
+    if (started && !finished) paused = true;
+  });
+  panel.addEventListener('mouseleave', function() {
+    if (started && !finished) paused = false;
+  });
+
+  function delay(ms) {
+    return new Promise(function(resolve) {
+      var elapsed = 0;
+      var interval = 16;
+      function tick() {
+        if (paused) { requestAnimationFrame(tick); return; }
+        elapsed += interval;
+        if (elapsed >= ms) resolve();
+        else setTimeout(tick, interval);
+      }
+      setTimeout(tick, interval);
+    });
+  }
+
+  function runAnimation() {
+    if (started) return;
+    started = true;
+
+    var completedCount = 0;
+    var stepsDone = 0;
+
+    delay(100).then(function() {
+      nodes.forEach(function(n) { nodeEls[n.id].classList.add('queued'); });
+      return delay(INITIAL_DELAY);
+    }).then(function() {
+      var chain = Promise.resolve();
+      waves.forEach(function(wave, waveIdx) {
+        chain = chain.then(function() {
+          wave.forEach(function(nid) {
+            edgeEls.forEach(function(e) {
+              if (e.dataset.to === nid) e.classList.add('active');
+            });
+          });
+
+          stepLabelEls[waveIdx].classList.add('show', 'active-step');
+
+          var pip = progressBar.querySelector('[data-step="' + waveIdx + '"]');
+          if (pip) pip.classList.add('active');
+
+          wave.forEach(function(nid) {
+            nodeEls[nid].classList.remove('queued');
+            nodeEls[nid].classList.add('executing');
+          });
+
+          return delay(EXEC_DURATION).then(function() {
+            wave.forEach(function(nid) {
+              nodeEls[nid].classList.remove('executing');
+              nodeEls[nid].classList.add('done');
+              edgeEls.forEach(function(e) {
+                if (e.dataset.to === nid) {
+                  e.classList.remove('active');
+                  e.classList.add('done');
+                }
+              });
+            });
+
+            completedCount += wave.length;
+            stepsDone++;
+            txCountEl.textContent = completedCount;
+            stepCountEl.textContent = stepsDone;
+
+            var pip2 = progressBar.querySelector('[data-step="' + waveIdx + '"]');
+            if (pip2) { pip2.classList.remove('active'); pip2.classList.add('done'); }
+
+            stepLabelEls[waveIdx].classList.remove('active-step');
+            stepLabelEls[waveIdx].classList.add('done-step');
+
+            if (stepsDone === totalSteps) {
+              finished = true;
+              throughputEl.classList.add('final');
+            }
+
+            return delay(WAVE_GAP);
+          });
+        });
+      });
+      return chain;
+    });
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting && !started) {
+        runAnimation();
+        observer.disconnect();
+      }
+    });
+  }, { threshold: 0.4 });
+
+  observer.observe(panel);
+})();
+</script>
+</body>
+</html>

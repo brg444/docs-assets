@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geist/v3/gyByhwUxId8gMEwcGFWNOITd.woff2) format('woff2');
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: transparent;
+  font-family: 'Geist', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.diagram {
+  position: relative;
+  height: 240px;
+  padding: 0;
+}
+
+.svg-lines {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.svg-lines line {
+  stroke: #FF5327;
+  stroke-width: 1.5;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.svg-lines line.show { opacity: 1; }
+
+/* State boxes */
+.state {
+  position: absolute;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.state.show { opacity: 1; }
+
+.state.s-created {
+  background: #FF5327;
+  color: #fff;
+}
+.state.s-active {
+  background: #fff;
+  border: 1.5px solid #FF5327;
+  color: #FF5327;
+}
+.state.s-renewal {
+  background: #fff;
+  border: 1.5px dashed #C0C0C0;
+  color: #1A1A1A;
+}
+.state.s-expired {
+  background: #fff;
+  border: 1.5px dashed #C0C0C0;
+  color: #999;
+}
+
+/* Description labels */
+.desc {
+  position: absolute;
+  font-size: 10px;
+  color: #777;
+  line-height: 1.4;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.desc.show { opacity: 1; }
+
+/* Loop label */
+.loop-label {
+  position: absolute;
+  font-size: 9px;
+  font-weight: 600;
+  color: #FF5327;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.loop-label.show { opacity: 1; }
+
+/* Exit guarantee bar */
+.exit-bar {
+  position: absolute;
+  font-size: 9px;
+  font-weight: 500;
+  color: #FF5327;
+  letter-spacing: 0.01em;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  border-top: 1.5px solid #FF5327;
+  padding-top: 6px;
+}
+.exit-bar.show { opacity: 1; }
+
+/* Positions */
+#s0 { left: 6%; top: 42%; }
+#s1 { left: 28%; top: 42%; }
+#s2 { left: 50%; top: 42%; }
+#s3 { left: 78%; top: 42%; }
+
+#d0 { left: 6%; top: 60%; }
+#d1 { left: 28%; top: 60%; }
+#d2 { left: 50%; top: 60%; }
+#d3 { left: 78%; top: 60%; }
+
+#loopLabel { left: 34%; top: 10%; }
+#exitBar { left: 6%; top: 82%; width: 68%; text-align: center; }
+
+@media (prefers-color-scheme: dark) {
+  body { background: #101013; }
+  .state.s-active { background: #fff; }
+  .state.s-renewal { background: #fff; }
+  .state.s-expired { background: #fff; }
+}
+
+@media (max-width: 640px) {
+  .diagram { height: 360px; }
+  .state { font-size: 10px; padding: 7px 12px; }
+
+  #s0 { left: 10%; top: 16%; }
+  #s1 { left: 10%; top: 32%; }
+  #s2 { left: 10%; top: 48%; }
+  #s3 { left: 10%; top: 64%; }
+
+  #d0 { left: 48%; top: 17%; font-size: 9px; }
+  #d1 { left: 48%; top: 33%; font-size: 9px; }
+  #d2 { left: 48%; top: 49%; font-size: 9px; }
+  #d3 { left: 48%; top: 65%; font-size: 9px; }
+
+  #loopLabel { left: 2%; top: 38%; font-size: 8px; }
+  #exitBar { left: 10%; top: 82%; width: 80%; font-size: 8px; }
+
+  .svg-lines line { stroke-width: 1; }
+}
+</style>
+</head>
+<body>
+
+<div class="diagram" id="diagram">
+  <svg class="svg-lines" id="svgLines"></svg>
+
+  <div class="state s-created" id="s0">Created</div>
+  <div class="state s-active" id="s1">Active</div>
+  <div class="state s-renewal" id="s2">Renewal Window</div>
+  <div class="state s-expired" id="s3">Expired</div>
+
+  <div class="desc" id="d0">Backed by presigned<br>exit transaction</div>
+  <div class="desc" id="d1">Spendable offchain<br>(preconfirmed or settled)</div>
+  <div class="desc" id="d2">Batch swap renews<br>with fresh expiry</div>
+  <div class="desc" id="d3">Operator sweeps;<br>Arkade Notes issued</div>
+
+  <div class="loop-label" id="loopLabel">Batch Swap (renewal)</div>
+  <div class="exit-bar" id="exitBar">Presigned exit tx throughout lifecycle</div>
+</div>
+
+<script>
+(function() {
+  var diagram = document.getElementById('diagram');
+  var svg = document.getElementById('svgLines');
+  var isMobile = window.matchMedia('(max-width: 640px)').matches;
+  var arrowLen = isMobile ? 3 : 5;
+  var arrowW = isMobile ? 2 : 3;
+
+  function getPos(id) {
+    var el = document.getElementById(id);
+    var r = el.getBoundingClientRect();
+    var d = diagram.getBoundingClientRect();
+    return {
+      left: r.left - d.left,
+      right: r.right - d.left,
+      top: r.top - d.top,
+      bottom: r.bottom - d.top,
+      midY: r.top + r.height / 2 - d.top,
+      midX: r.left + r.width / 2 - d.left
+    };
+  }
+
+  function addLine(x1, y1, x2, y2, group) {
+    var l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', x1); l.setAttribute('y1', y1);
+    l.setAttribute('x2', x2); l.setAttribute('y2', y2);
+    if (group) l.setAttribute('data-group', group);
+    svg.appendChild(l);
+  }
+
+  function arrowRight(x, y, g) {
+    addLine(x - arrowLen, y - arrowW, x, y, g);
+    addLine(x - arrowLen, y + arrowW, x, y, g);
+  }
+  function arrowDown(x, y, g) {
+    addLine(x - arrowW, y - arrowLen, x, y, g);
+    addLine(x + arrowW, y - arrowLen, x, y, g);
+  }
+  function arrowLeft(x, y, g) {
+    addLine(x + arrowLen, y - arrowW, x, y, g);
+    addLine(x + arrowLen, y + arrowW, x, y, g);
+  }
+
+  function showGroup(group, delay) {
+    setTimeout(function() {
+      svg.querySelectorAll('[data-group="' + group + '"]')
+        .forEach(function(l) { l.classList.add('show'); });
+    }, delay);
+  }
+
+  function showEl(id, delay) {
+    setTimeout(function() { document.getElementById(id).classList.add('show'); }, delay);
+  }
+
+  function drawDesktop() {
+    svg.innerHTML = '';
+    var s0 = getPos('s0'), s1 = getPos('s1'), s2 = getPos('s2'), s3 = getPos('s3');
+
+    // Forward arrows: s0→s1→s2→s3
+    addLine(s0.right, s0.midY, s1.left, s1.midY, 'fwd');
+    arrowRight(s1.left, s1.midY, 'fwd');
+    addLine(s1.right, s1.midY, s2.left, s2.midY, 'fwd');
+    arrowRight(s2.left, s2.midY, 'fwd');
+    addLine(s2.right, s2.midY, s3.left, s3.midY, 'fwd');
+    arrowRight(s3.left, s3.midY, 'fwd');
+
+    // Renewal loop: s2 top → up → left → down → s0 top (angular path)
+    var loopY = s0.top - 30;
+    addLine(s2.midX, s2.top, s2.midX, loopY, 'loop');
+    addLine(s2.midX, loopY, s0.midX, loopY, 'loop');
+    addLine(s0.midX, loopY, s0.midX, s0.top, 'loop');
+    arrowDown(s0.midX, s0.top, 'loop');
+  }
+
+  function drawMobile() {
+    svg.innerHTML = '';
+    var s0 = getPos('s0'), s1 = getPos('s1'), s2 = getPos('s2'), s3 = getPos('s3');
+
+    // Forward arrows: s0→s1→s2→s3 (vertical)
+    addLine(s0.midX, s0.bottom, s1.midX, s1.top, 'fwd');
+    arrowDown(s1.midX, s1.top, 'fwd');
+    addLine(s1.midX, s1.bottom, s2.midX, s2.top, 'fwd');
+    arrowDown(s2.midX, s2.top, 'fwd');
+    addLine(s2.midX, s2.bottom, s3.midX, s3.top, 'fwd');
+    arrowDown(s3.midX, s3.top, 'fwd');
+
+    // Renewal loop: s2 left → left → up → right → s0 left (angular path)
+    var loopX = s0.left - 20;
+    addLine(s2.left, s2.midY, loopX, s2.midY, 'loop');
+    addLine(loopX, s2.midY, loopX, s0.midY, 'loop');
+    addLine(loopX, s0.midY, s0.left, s0.midY, 'loop');
+    arrowRight(s0.left, s0.midY, 'loop');
+  }
+
+  function run() {
+    showEl('s0', 200);
+    showEl('d0', 300);
+
+    setTimeout(function() {
+      if (isMobile) drawMobile(); else drawDesktop();
+    }, 400);
+
+    showGroup('fwd', 500);
+    showEl('s1', 700);
+    showEl('d1', 800);
+    showEl('s2', 1100);
+    showEl('d2', 1200);
+    showEl('s3', 1500);
+    showEl('d3', 1600);
+
+    showGroup('loop', 1900);
+    showEl('loopLabel', 2000);
+    showEl('exitBar', 2300);
+  }
+
+  if (typeof IntersectionObserver !== 'undefined') {
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { obs.disconnect(); run(); }
+    }, { threshold: 0.3 });
+    obs.observe(diagram);
+  } else { run(); }
+})();
+</script>
+</body>
+</html>

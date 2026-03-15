@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Arkade SW Mockup</title>
+<style>
+  @font-face {
+    font-family: 'Geist';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url(https://fonts.gstatic.com/s/geist/v3/gyByhwUxId8gMEwcGFWNOITd.woff2) format('woff2');
+  }
+  @font-face {
+    font-family: 'Geist Mono';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url(https://fonts.gstatic.com/s/geistmono/v3/or3yQ6H81JOCPFhYqdDhrClU5lLDA2a8iBMX.woff2) format('woff2');
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #e8e8e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #capture {
+    width: 400px;
+    height: 780px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e8e8e8;
+  }
+
+  .app {
+    width: 390px;
+    height: 760px;
+    background: #fbfbfb;
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  /* ===== TOP AREA ===== */
+  .top-area {
+    padding: 28px 24px 0;
+  }
+
+  .logo { margin-bottom: 24px; }
+  .logo svg { width: 34px; height: 34px; }
+
+  .balance-label {
+    color: #747474;
+    font-size: 14px;
+    font-weight: 400;
+    margin-bottom: 2px;
+  }
+
+  .balance-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2px;
+  }
+  .balance-amount {
+    color: #040404;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .balance-eye {
+    color: #c0c0c0;
+    font-size: 16px;
+    margin-top: 2px;
+  }
+
+  .balance-fiat {
+    color: #747474;
+    font-size: 14px;
+    font-weight: 400;
+    margin-bottom: 20px;
+  }
+
+  /* Buttons */
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .action-btn {
+    flex: 1;
+    background: #391998;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 0;
+    font-family: 'Geist Mono', monospace;
+    font-size: 14px;
+    font-weight: 400;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+  }
+  .btn-icon { font-size: 15px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 20px;
+    border-bottom: 1px solid #ebebeb;
+    padding: 0 24px;
+  }
+  .tab {
+    padding: 10px 0;
+    font-size: 14px;
+    font-weight: 400;
+    color: #b0b0b0;
+  }
+  .tab.active {
+    color: #040404;
+    font-weight: 600;
+    border-bottom: 2px solid #040404;
+    margin-bottom: -1px;
+  }
+
+  /* Transactions */
+  .tx-list {
+    flex: 1;
+    overflow: hidden;
+    padding: 0 24px;
+  }
+
+  .tx-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f2f2f2;
+  }
+
+  .tx-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .tx-icon-in { background: #e8f5e9; color: #60b18a; }
+  .tx-icon-out { background: #f3f3f3; color: #747474; }
+  .tx-icon-cancel { background: #fde8e8; color: #a51515; }
+  .tx-icon-lightning { background: #f0eaff; color: #7043f4; }
+
+  .tx-details { flex: 1; }
+  .tx-label {
+    color: #040404;
+    font-size: 14px;
+    font-weight: 400;
+  }
+  .tx-time {
+    color: #a0a0a0;
+    font-size: 13px;
+    font-weight: 400;
+    margin-top: 1px;
+  }
+
+  .tx-amounts { text-align: right; }
+  .tx-sats {
+    font-size: 14px;
+    font-weight: 400;
+  }
+  .tx-sats-pos { color: #60b18a; }
+  .tx-sats-neg { color: #040404; }
+  .tx-usd {
+    color: #a0a0a0;
+    font-size: 13px;
+    font-weight: 400;
+    margin-top: 1px;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 24px 20px;
+    border-top: 1px solid #ebebeb;
+    background: #fbfbfb;
+  }
+  .nav-item {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 500;
+    color: #b0b0b0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .nav-item.active { color: #391998; }
+  .nav-icon { font-size: 20px; line-height: 1; }
+
+  /* ===== NOTIFICATION ===== */
+  .notification {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 200;
+    transform: translateY(-120px);
+    opacity: 0;
+    transition: transform 500ms cubic-bezier(0.32, 0.72, 0, 1), opacity 250ms ease;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+  }
+  .notification.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  .notif-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    background: #391998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .notif-icon svg { width: 20px; height: 20px; }
+  .notif-content { flex: 1; }
+  .notif-app {
+    color: #999;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 1px;
+  }
+  .notif-title {
+    color: #040404;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .notif-body {
+    color: #747474;
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .notif-time {
+    color: #b0b0b0;
+    font-size: 11px;
+    align-self: flex-start;
+  }
+
+  /* New TX */
+  .tx-item.new-tx {
+    background: #f8f4ff;
+    border-radius: 10px;
+    padding: 14px 12px;
+    margin: 6px -12px 0;
+    border-bottom: none;
+    animation: fadeIn 400ms ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .new-badge {
+    background: #391998;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="capture">
+  <div class="app">
+    <div class="top-area">
+      <div class="logo">
+        <svg viewBox="0 0 35 35" fill="none">
+          <path d="M0 8.75L8.75 0H26.25L35 8.75V17.5H26.25V8.75H8.75V17.5H0L0 8.75Z" fill="#391998"/>
+          <path d="M8.75 26.25V17.5H26.25V26.25H8.75Z" fill="#391998"/>
+          <path d="M8.75 26.25H0V35H8.75V26.25Z" fill="#391998"/>
+          <path d="M26.25 26.25V35H35V26.25H26.25Z" fill="#391998"/>
+        </svg>
+      </div>
+
+      <div class="balance-label">My balance</div>
+      <div class="balance-row">
+        <div class="balance-amount" id="balanceAmount">125,000</div>
+        <div class="balance-eye">◉</div>
+      </div>
+      <div class="balance-fiat" id="balanceFiat">$95.63</div>
+
+      <div class="action-buttons">
+        <div class="action-btn"><span class="btn-icon">↗</span> Send</div>
+        <div class="action-btn"><span class="btn-icon">✦</span> Receive</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active">Recent</div>
+      <div class="tab">Payments</div>
+    </div>
+
+    <div class="tx-list">
+      <div class="tx-item new-tx hidden" id="newTx">
+        <div class="tx-icon tx-icon-lightning">⚡</div>
+        <div class="tx-details">
+          <div class="tx-label">Received<span class="new-badge">New</span></div>
+          <div class="tx-time">Just now</div>
+        </div>
+        <div class="tx-amounts">
+          <div class="tx-sats tx-sats-pos">+50,000 SATS</div>
+          <div class="tx-usd">$38.25</div>
+        </div>
+      </div>
+
+      <div class="tx-item">
+        <div class="tx-icon tx-icon-in">↓</div>
+        <div class="tx-details">
+          <div class="tx-label">Received</div>
+          <div class="tx-time">Mar 13 at 14:22</div>
+        </div>
+        <div class="tx-amounts">
+          <div class="tx-sats tx-sats-pos">+13,206 SATS</div>
+          <div class="tx-usd">$10.10</div>
+        </div>
+      </div>
+
+      <div class="tx-item">
+        <div class="tx-icon tx-icon-out">↑</div>
+        <div class="tx-details">
+          <div class="tx-label">Sent</div>
+          <div class="tx-time">Mar 13 at 02:11</div>
+        </div>
+        <div class="tx-amounts">
+          <div class="tx-sats tx-sats-neg">-5,000 SATS</div>
+          <div class="tx-usd">$3.83</div>
+        </div>
+      </div>
+
+      <div class="tx-item">
+        <div class="tx-icon tx-icon-cancel">✕</div>
+        <div class="tx-details">
+          <div class="tx-label">Cancelled</div>
+          <div class="tx-time">Mar 12 at 10:13</div>
+        </div>
+        <div class="tx-amounts">
+          <div class="tx-sats tx-sats-neg">-5,000 SATS</div>
+          <div class="tx-usd">$3.83</div>
+        </div>
+      </div>
+
+      <div class="tx-item">
+        <div class="tx-icon tx-icon-out">↑</div>
+        <div class="tx-details">
+          <div class="tx-label">Sent</div>
+          <div class="tx-time">Mar 12 at 10:00</div>
+        </div>
+        <div class="tx-amounts">
+          <div class="tx-sats tx-sats-neg">-23,513 SATS</div>
+          <div class="tx-usd">$17.99</div>
+        </div>
+      </div>
+
+      <div class="tx-item">
+        <div class="tx-icon tx-icon-out">↑</div>
+        <div class="tx-details">
+          <div class="tx-label">Sent</div>
+          <div class="tx-time">Mar 11 at 13:05</div>
+        </div>
+        <div class="tx-amounts">
+          <div class="tx-sats tx-sats-neg">-23,513 SATS</div>
+          <div class="tx-usd">$17.99</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item active">
+        <div class="nav-icon">◉</div>
+        Wallet
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon">⬡</div>
+        Apps
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon">⚙</div>
+        Settings
+      </div>
+    </div>
+
+    <div class="notification" id="notification">
+      <div class="notif-icon">
+        <svg viewBox="0 0 35 35" fill="none">
+          <path d="M0 8.75L8.75 0H26.25L35 8.75V17.5H26.25V8.75H8.75V17.5H0L0 8.75Z" fill="#fff"/>
+          <path d="M8.75 26.25V17.5H26.25V26.25H8.75Z" fill="#fff"/>
+          <path d="M8.75 26.25H0V35H8.75V26.25Z" fill="#fff"/>
+          <path d="M26.25 26.25V35H35V26.25H26.25Z" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="notif-content">
+        <div class="notif-app">Arkade Wallet</div>
+        <div class="notif-title">⚡ Lightning Payment Received</div>
+        <div class="notif-body">+50,000 sats from service worker</div>
+      </div>
+      <div class="notif-time">now</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const notification = document.getElementById('notification');
+const balanceAmount = document.getElementById('balanceAmount');
+const balanceFiat = document.getElementById('balanceFiat');
+const newTx = document.getElementById('newTx');
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function loop() {
+  while (true) {
+    notification.classList.remove('show');
+    balanceAmount.textContent = '125,000';
+    balanceFiat.textContent = '$95.63';
+    newTx.classList.add('hidden');
+    await wait(2500);
+
+    notification.classList.add('show');
+    await wait(2500);
+
+    notification.classList.remove('show');
+    await wait(400);
+    balanceAmount.textContent = '175,000';
+    balanceFiat.textContent = '$133.88';
+    newTx.classList.remove('hidden');
+    await wait(4000);
+  }
+}
+
+loop();
+</script>
+</body>
+</html>

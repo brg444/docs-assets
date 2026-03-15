@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geist/v3/gyByhwUxId8gMEwcGFWNOITd.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geistmono/v3/or3yQ6H81JOCPFhYqdDhrClU5lLDA2a8iBMX.woff2) format('woff2');
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: transparent;
+  font-family: 'Geist', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #E8E8E8;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: #FAFAFA;
+  gap: 10px;
+  border-bottom: 1px solid #E8E8E8;
+}
+
+.logo { width: 18px; height: 18px; flex-shrink: 0; }
+
+.card-title {
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px;
+  color: #999;
+  flex: 1;
+  letter-spacing: 0.02em;
+}
+
+.badge {
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: #381993;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.diagram {
+  position: relative;
+  height: 200px;
+  padding: 20px 24px;
+}
+
+.diagram-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+.diagram-svg path {
+  fill: none;
+  stroke-width: 1.5;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.diagram-svg path.show { opacity: 1; }
+
+.diagram-svg polygon {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.diagram-svg polygon.show { opacity: 1; }
+
+/* VTXO source box */
+.vtxo-source {
+  position: absolute;
+  left: 8%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #381993;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 6px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.vtxo-source.show { opacity: 1; }
+.vtxo-source .title { font-size: 12px; font-weight: 600; }
+.vtxo-source .sub { font-size: 9px; opacity: 0.6; margin-top: 2px; }
+
+/* Path boxes */
+.path-box {
+  position: absolute;
+  padding: 10px 14px;
+  border-radius: 8px;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.path-box.show { opacity: 1; transform: translateX(0); }
+
+.path-box .path-title {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.path-box .path-detail {
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  margin-bottom: 6px;
+}
+
+.path-box .path-tag {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* Collaborative path */
+.path-collab {
+  right: 12%;
+  top: 12%;
+  background: rgba(56,25,147,0.04);
+  border: 1.5px solid #381993;
+}
+.path-collab .path-title { color: #381993; }
+.path-collab .path-detail { color: #575757; }
+.path-collab .path-tag { background: #381993; color: #fff; }
+
+/* Exit path */
+.path-exit {
+  right: 12%;
+  bottom: 12%;
+  background: #F8F8F8;
+  border: 1.5px dashed #C0C0C0;
+}
+.path-exit .path-title { color: #575757; }
+.path-exit .path-detail { color: #999; }
+.path-exit .path-tag { background: #F2F2F2; color: #575757; }
+
+/* Default label */
+.default-label {
+  position: absolute;
+  right: 6%;
+  top: 8%;
+  font-size: 8px;
+  font-weight: 600;
+  color: #381993;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.default-label.show { opacity: 1; }
+
+@media (max-width: 640px) {
+  .diagram { height: 180px; padding: 16px 12px; }
+  .vtxo-source { left: 3%; padding: 8px 12px; }
+  .vtxo-source .title { font-size: 10px; }
+  .vtxo-source .sub { font-size: 8px; }
+  .path-box { padding: 8px 10px; }
+  .path-box .path-title { font-size: 9px; }
+  .path-box .path-detail { font-size: 8px; }
+  .path-box .path-tag { font-size: 8px; }
+  .path-collab { right: 4%; top: 8%; }
+  .path-exit { right: 4%; bottom: 8%; }
+  .default-label { right: 2%; top: 4%; font-size: 7px; }
+  .card-title { font-size: 10px; }
+  .card-header { padding: 10px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="card" id="panel">
+  <div class="card-header">
+    <svg class="logo" viewBox="0 0 35 35" fill="none">
+      <path d="M0 8.75L8.75 0H26.25L35 8.75V17.5H26.25V8.75H8.75V17.5H0L0 8.75Z" fill="#381993"/>
+      <path d="M8.75 26.25V17.5H26.25V26.25H8.75Z" fill="#381993"/>
+      <path d="M8.75 26.25H0V35H8.75V26.25Z" fill="#381993"/>
+      <path d="M26.25 26.25V35H35V26.25H26.25Z" fill="#381993"/>
+    </svg>
+    <span class="card-title">vtxo::spending_paths</span>
+    <span class="badge">Taproot</span>
+  </div>
+
+  <div class="diagram" id="diagram">
+    <svg class="diagram-svg" id="svg" viewBox="0 0 700 200" preserveAspectRatio="xMidYMid meet">
+      <!-- Collaborative path line -->
+      <path id="lineCollab" d="M 160,100 C 280,100 300,50 420,50" stroke="#381993" stroke-width="1.5" />
+      <polygon id="arrowCollab" points="415,46 422,50 415,54" fill="#381993" />
+      <!-- Exit path line -->
+      <path id="lineExit" d="M 160,100 C 280,100 300,155 420,155" stroke="#C0C0C0" stroke-width="1.5" stroke-dasharray="4,3" />
+      <polygon id="arrowExit" points="415,151 422,155 415,159" fill="#C0C0C0" />
+    </svg>
+
+    <div class="vtxo-source" id="vtxoBox">
+      <div class="title">VTXO</div>
+      <div class="sub">Your funds</div>
+    </div>
+
+    <div class="default-label" id="defaultLabel">Default</div>
+
+    <div class="path-box path-collab" id="pathCollab">
+      <div class="path-title">Collaborative Path</div>
+      <div class="path-detail">user + operator cosign</div>
+      <span class="path-tag">Instant</span>
+    </div>
+
+    <div class="path-box path-exit" id="pathExit">
+      <div class="path-title">Unilateral Exit</div>
+      <div class="path-detail">user + timelock</div>
+      <span class="path-tag">After delay</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var panel = document.getElementById('panel');
+  var paused = false;
+
+  panel.addEventListener('mouseenter', function() { paused = true; });
+  panel.addEventListener('mouseleave', function() { paused = false; });
+
+  function show(id, delay) {
+    setTimeout(function() {
+      document.getElementById(id).classList.add('show');
+    }, delay);
+  }
+
+  function run() {
+    show('vtxoBox', 200);
+    show('lineCollab', 600);
+    show('arrowCollab', 600);
+    show('pathCollab', 800);
+    show('defaultLabel', 900);
+    show('lineExit', 1100);
+    show('arrowExit', 1100);
+    show('pathExit', 1300);
+  }
+
+  if (typeof IntersectionObserver !== 'undefined') {
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { obs.disconnect(); run(); }
+    }, { threshold: 0.3 });
+    obs.observe(panel);
+  } else {
+    run();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geist/v3/gyByhwUxId8gMEwcGFWNOITd.woff2) format('woff2');
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: transparent;
+  font-family: 'Geist', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.diagram {
+  position: relative;
+  height: 200px;
+  padding: 20px 0;
+}
+
+.svg-lines {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.svg-lines line {
+  stroke: #FF5327;
+  stroke-width: 1.5;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.svg-lines line.show { opacity: 1; }
+
+.ct-box {
+  position: absolute;
+  left: 4%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #FF5327;
+  color: #fff;
+  padding: 14px 22px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.ct-box.show { opacity: 1; }
+
+.output-box {
+  position: absolute;
+  background: #fff;
+  border: 1.5px dashed #C0C0C0;
+  padding: 12px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1A1A1A;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.output-box.show { opacity: 1; }
+
+#batchBox {
+  left: 38%;
+  top: 20%;
+  transform: translateY(-50%);
+}
+
+#connectorBox {
+  left: 38%;
+  top: 80%;
+  transform: translateY(-50%);
+}
+#connectorBox::before {
+  content: '';
+  position: absolute;
+  top: -5px; left: -5px; right: -5px; bottom: -5px;
+  border: 1.5px dashed #C0C0C0;
+  border-radius: 24px;
+}
+
+#virtualBox {
+  right: 6%;
+  top: 80%;
+  transform: translateY(-50%);
+}
+#virtualBox::before {
+  content: '';
+  position: absolute;
+  top: -5px; left: -5px; right: -5px; bottom: -5px;
+  border: 1.5px dashed #C0C0C0;
+  border-radius: 24px;
+}
+
+@media (prefers-color-scheme: dark) {
+  body { background: #101013; }
+  .output-box { background: #fff; }
+}
+
+@media (max-width: 640px) {
+  .diagram {
+    height: 160px;
+    padding: 10px 0;
+  }
+  .ct-box {
+    left: 2%;
+    padding: 6px 8px;
+    font-size: 8px;
+    white-space: normal;
+    max-width: 22%;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .output-box {
+    padding: 6px 10px;
+    font-size: 8px;
+    border-radius: 14px;
+  }
+  #batchBox { left: 32%; }
+  #connectorBox { left: 32%; }
+  #connectorBox::before {
+    top: -3px; left: -3px; right: -3px; bottom: -3px;
+    border-radius: 17px;
+  }
+  #virtualBox { right: 4%; }
+  #virtualBox::before {
+    top: -3px; left: -3px; right: -3px; bottom: -3px;
+    border-radius: 17px;
+  }
+  .svg-lines line { stroke-width: 1; }
+}
+</style>
+</head>
+<body>
+
+<div class="diagram" id="diagram">
+  <svg class="svg-lines" id="svgLines"></svg>
+  <div class="ct-box" id="ctBox">Commitment Transaction</div>
+  <div class="output-box" id="batchBox">Batch Output</div>
+  <div class="output-box" id="connectorBox">Connector Output</div>
+  <div class="output-box" id="virtualBox">Virtual Connector</div>
+</div>
+
+<script>
+(function() {
+  var diagram = document.getElementById('diagram');
+  var svg = document.getElementById('svgLines');
+  var isMobile = window.matchMedia('(max-width: 640px)').matches;
+  var arrowLen = isMobile ? 4 : 6;
+  var arrowW = isMobile ? 3 : 4;
+
+  function getPos(el) {
+    var r = el.getBoundingClientRect();
+    var d = diagram.getBoundingClientRect();
+    return {
+      left: r.left - d.left,
+      right: r.right - d.left,
+      midY: r.top + r.height / 2 - d.top
+    };
+  }
+
+  function addLine(x1, y1, x2, y2, group) {
+    var l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', x1);
+    l.setAttribute('y1', y1);
+    l.setAttribute('x2', x2);
+    l.setAttribute('y2', y2);
+    if (group) l.setAttribute('data-group', group);
+    svg.appendChild(l);
+    return l;
+  }
+
+  function showGroup(group, delay) {
+    setTimeout(function() {
+      var lines = svg.querySelectorAll('[data-group="' + group + '"]');
+      lines.forEach(function(l) { l.classList.add('show'); });
+    }, delay);
+  }
+
+  function showEl(id, delay) {
+    setTimeout(function() {
+      document.getElementById(id).classList.add('show');
+    }, delay);
+  }
+
+  function drawAll() {
+    svg.innerHTML = '';
+    var ct = document.getElementById('ctBox');
+    var batch = document.getElementById('batchBox');
+    var conn = document.getElementById('connectorBox');
+    var virt = document.getElementById('virtualBox');
+
+    var f = getPos(ct);
+    var t1 = getPos(batch);
+    var t2 = getPos(conn);
+    var t3 = getPos(virt);
+
+    var outerOffset = isMobile ? 4 : 6;
+    var mx = f.right + (Math.min(t1.left, t2.left) - f.right) * 0.5;
+
+    // CT to fork
+    addLine(f.right, f.midY, mx, f.midY, 'g1');
+    addLine(mx, t1.midY, mx, t2.midY, 'g1');
+    // Fork to Batch
+    addLine(mx, t1.midY, t1.left, t1.midY, 'g1');
+    addLine(t1.left - arrowLen, t1.midY - arrowW, t1.left, t1.midY, 'g1');
+    addLine(t1.left - arrowLen, t1.midY + arrowW, t1.left, t1.midY, 'g1');
+    // Fork to Connector (account for outer border)
+    var connLeft = t2.left - outerOffset;
+    addLine(mx, t2.midY, connLeft, t2.midY, 'g1');
+    addLine(connLeft - arrowLen, t2.midY - arrowW, connLeft, t2.midY, 'g1');
+    addLine(connLeft - arrowLen, t2.midY + arrowW, connLeft, t2.midY, 'g1');
+
+    // Connector to Virtual Connector
+    var connRight = t2.right + outerOffset;
+    var virtLeft = t3.left - outerOffset;
+    addLine(connRight, t2.midY, virtLeft, t3.midY, 'g2');
+    addLine(virtLeft - arrowLen, t3.midY - arrowW, virtLeft, t3.midY, 'g2');
+    addLine(virtLeft - arrowLen, t3.midY + arrowW, virtLeft, t3.midY, 'g2');
+  }
+
+  function run() {
+    showEl('ctBox', 200);
+    setTimeout(function() {
+      drawAll();
+      showGroup('g1', 100);
+    }, 500);
+    showEl('batchBox', 800);
+    showEl('connectorBox', 1000);
+    showGroup('g2', 1300);
+    showEl('virtualBox', 1500);
+  }
+
+  if (typeof IntersectionObserver !== 'undefined') {
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { obs.disconnect(); run(); }
+    }, { threshold: 0.3 });
+    obs.observe(diagram);
+  } else {
+    run();
+  }
+})();
+</script>
+</body>
+</html>

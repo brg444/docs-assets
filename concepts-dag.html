@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geist/v3/gyByhwUxId8gMEwcGFWNOITd.woff2) format('woff2');
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: transparent;
+  font-family: 'Geist', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.diagram {
+  position: relative;
+  height: 340px;
+  padding: 10px 0;
+}
+
+.svg-lines {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.svg-lines line {
+  stroke: #FF5327;
+  stroke-width: 1.5;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.svg-lines line.show { opacity: 1; }
+
+.source-box {
+  position: absolute;
+  background: #FF5327;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.source-box.show { opacity: 1; }
+
+.batch-box {
+  position: absolute;
+  background: #fff;
+  border: 1.5px dashed #C0C0C0;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1A1A1A;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.batch-box.show { opacity: 1; }
+
+.vtxo {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1.5px dashed #C0C0C0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #575757;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: #fff;
+}
+.vtxo.show { opacity: 1; }
+
+.tx-box {
+  position: absolute;
+  background: #fff;
+  border: 1.5px dashed #C0C0C0;
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #1A1A1A;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.tx-box::before {
+  content: '';
+  position: absolute;
+  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  border: 1.5px dashed #C0C0C0;
+  border-radius: 6px;
+}
+.tx-box.show { opacity: 1; }
+
+/* Desktop positions - matched to reference image proportions (2.1:1 aspect) */
+#batchOut1 { left: 6%; top: 37%; transform: translateY(-50%); }
+#vtxo1 { left: 22%; top: 5%; }
+#vtxo2 { left: 19%; top: 42%; }
+#arkTx1 { left: 32%; top: 37%; transform: translateY(-50%); }
+#vtxo3 { left: 51%; top: 19%; }
+#batchOut2 { left: 33%; top: 75%; transform: translateY(-50%); }
+#vtxo4 { left: 48%; top: 50%; }
+#vtxo5 { left: 48%; top: 78%; }
+#arkTx2 { left: 63%; top: 50%; transform: translateY(-50%); }
+#vtxo6 { right: 7%; top: 22%; }
+#vtxo7 { right: 7%; top: 54%; }
+
+@media (prefers-color-scheme: dark) {
+  body { background: #101013; }
+  .batch-box { background: #fff; }
+  .vtxo { background: #fff; }
+  .tx-box { background: #fff; }
+}
+
+@media (max-width: 640px) {
+  .diagram {
+    height: 280px;
+    padding: 4px 0;
+  }
+  .source-box { padding: 4px 7px; font-size: 7px; }
+  .batch-box { padding: 4px 7px; font-size: 7px; border-radius: 12px; }
+  .vtxo { width: 34px; height: 34px; font-size: 6px; }
+  .tx-box { padding: 3px 6px; font-size: 6px; }
+  .tx-box::before { top: -3px; left: -3px; right: -3px; bottom: -3px; }
+  .svg-lines line { stroke-width: 1; }
+
+  #batchOut1 { left: 2%; top: 35%; }
+  #vtxo1 { left: 18%; top: 4%; }
+  #vtxo2 { left: 15%; top: 42%; }
+  #arkTx1 { left: 28%; top: 35%; }
+  #vtxo3 { left: 48%; top: 16%; }
+  #batchOut2 { left: 26%; top: 75%; }
+  #vtxo4 { left: 44%; top: 50%; }
+  #vtxo5 { left: 44%; top: 78%; }
+  #arkTx2 { left: 60%; top: 48%; }
+  #vtxo6 { right: 3%; top: 20%; }
+  #vtxo7 { right: 3%; top: 52%; }
+}
+</style>
+</head>
+<body>
+
+<div class="diagram" id="diagram">
+  <svg class="svg-lines" id="svgLines"></svg>
+
+  <div class="source-box" id="batchOut1">Batch Output</div>
+  <div class="batch-box" id="batchOut2">Batch Output</div>
+
+  <div class="vtxo" id="vtxo1">VTXO 1</div>
+  <div class="vtxo" id="vtxo2">VTXO 2</div>
+  <div class="vtxo" id="vtxo3">VTXO 3</div>
+  <div class="vtxo" id="vtxo4">VTXO 4</div>
+  <div class="vtxo" id="vtxo5">VTXO 5</div>
+  <div class="vtxo" id="vtxo6">VTXO 6</div>
+  <div class="vtxo" id="vtxo7">VTXO 7</div>
+
+  <div class="tx-box" id="arkTx1">Ark Transaction</div>
+  <div class="tx-box" id="arkTx2">Ark Transaction</div>
+</div>
+
+<script>
+(function() {
+  var diagram = document.getElementById('diagram');
+  var svg = document.getElementById('svgLines');
+  var isMobile = window.matchMedia('(max-width: 640px)').matches;
+  var arrowLen = isMobile ? 3 : 5;
+  var arrowW = isMobile ? 2 : 3;
+  var txOff = isMobile ? 3 : 5;
+
+  function getPos(id) {
+    var el = document.getElementById(id);
+    var r = el.getBoundingClientRect();
+    var d = diagram.getBoundingClientRect();
+    return {
+      left: r.left - d.left,
+      right: r.right - d.left,
+      top: r.top - d.top,
+      bottom: r.bottom - d.top,
+      midY: r.top + r.height / 2 - d.top,
+      midX: r.left + r.width / 2 - d.left,
+      isTx: el.classList.contains('tx-box')
+    };
+  }
+
+  function addLine(x1, y1, x2, y2, group) {
+    var l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', x1); l.setAttribute('y1', y1);
+    l.setAttribute('x2', x2); l.setAttribute('y2', y2);
+    if (group) l.setAttribute('data-group', group);
+    svg.appendChild(l);
+  }
+
+  function arrowRight(x, y, g) {
+    addLine(x - arrowLen, y - arrowW, x, y, g);
+    addLine(x - arrowLen, y + arrowW, x, y, g);
+  }
+  function arrowDown(x, y, g) {
+    addLine(x - arrowW, y - arrowLen, x, y, g);
+    addLine(x + arrowW, y - arrowLen, x, y, g);
+  }
+  function arrowUp(x, y, g) {
+    addLine(x - arrowW, y + arrowLen, x, y, g);
+    addLine(x + arrowW, y + arrowLen, x, y, g);
+  }
+
+  // Fork: one source → two targets (angular T-split)
+  function drawFork(fromId, toId1, toId2, group) {
+    var f = getPos(fromId);
+    var t1 = getPos(toId1);
+    var t2 = getPos(toId2);
+    var srcR = f.right + (f.isTx ? txOff : 0);
+    var mx = srcR + (Math.min(t1.left, t2.left) - srcR) * 0.5;
+    addLine(srcR, f.midY, mx, f.midY, group);
+    addLine(mx, t1.midY, mx, t2.midY, group);
+    addLine(mx, t1.midY, t1.left, t1.midY, group);
+    addLine(mx, t2.midY, t2.left, t2.midY, group);
+    arrowRight(t1.left, t1.midY, group);
+    arrowRight(t2.left, t2.midY, group);
+  }
+
+  // Straight horizontal connection
+  function drawStraight(fromId, toId, group) {
+    var f = getPos(fromId);
+    var t = getPos(toId);
+    var x1 = f.right + (f.isTx ? txOff : 0);
+    var x2 = t.left;
+    addLine(x1, f.midY, x2, t.midY, group);
+    arrowRight(x2, t.midY, group);
+  }
+
+  // L-shape entering target from TOP: horiz right → vert down → arrow down
+  function drawTopEntry(fromId, toId, group) {
+    var f = getPos(fromId);
+    var t = getPos(toId);
+    var targetTop = t.top - (t.isTx ? txOff : 0);
+    addLine(f.right, f.midY, t.midX, f.midY, group);
+    addLine(t.midX, f.midY, t.midX, targetTop, group);
+    arrowDown(t.midX, targetTop, group);
+  }
+
+  // Z-shape entering target from LEFT: horiz → vert → horiz → arrow right
+  function drawLeftEntry(fromId, toId, group) {
+    var f = getPos(fromId);
+    var t = getPos(toId);
+    var targetLeft = t.left - (t.isTx ? txOff : 0);
+    var turnX = targetLeft - 14;
+    addLine(f.right, f.midY, turnX, f.midY, group);
+    addLine(turnX, f.midY, turnX, t.midY, group);
+    addLine(turnX, t.midY, targetLeft, t.midY, group);
+    arrowRight(targetLeft, t.midY, group);
+  }
+
+  // L-shape entering target from BOTTOM: horiz right → vert up → arrow up
+  function drawBottomEntry(fromId, toId, group) {
+    var f = getPos(fromId);
+    var t = getPos(toId);
+    var targetBot = t.bottom + (t.isTx ? txOff : 0);
+    addLine(f.right, f.midY, t.midX, f.midY, group);
+    addLine(t.midX, f.midY, t.midX, targetBot, group);
+    arrowUp(t.midX, targetBot, group);
+  }
+
+  function showGroup(group, delay) {
+    setTimeout(function() {
+      svg.querySelectorAll('[data-group="' + group + '"]')
+        .forEach(function(l) { l.classList.add('show'); });
+    }, delay);
+  }
+
+  function showEl(id, delay) {
+    setTimeout(function() { document.getElementById(id).classList.add('show'); }, delay);
+  }
+
+  function drawAll() {
+    svg.innerHTML = '';
+    // Batch Output 1 → VTXO 1 (up), VTXO 2 (down)
+    drawFork('batchOut1', 'vtxo1', 'vtxo2', 'g1');
+    // VTXO 1 enters Ark Tx 1 from TOP (L-shape down)
+    drawTopEntry('vtxo1', 'arkTx1', 'g2');
+    // VTXO 2 enters Ark Tx 1 from LEFT (Z-shape)
+    drawLeftEntry('vtxo2', 'arkTx1', 'g2');
+    // Ark Tx 1 → VTXO 3 (straight right)
+    drawStraight('arkTx1', 'vtxo3', 'g3');
+    // Batch Output 2 → VTXO 4 (up), VTXO 5 (down)
+    drawFork('batchOut2', 'vtxo4', 'vtxo5', 'g4');
+    // VTXO 3 enters Ark Tx 2 from LEFT (Z-shape down-right)
+    drawLeftEntry('vtxo3', 'arkTx2', 'g5');
+    // VTXO 4 enters Ark Tx 2 from BOTTOM (L-shape up)
+    drawBottomEntry('vtxo4', 'arkTx2', 'g5');
+    // Ark Tx 2 → VTXO 6 (up), VTXO 7 (down)
+    drawFork('arkTx2', 'vtxo6', 'vtxo7', 'g6');
+  }
+
+  function run() {
+    showEl('batchOut1', 200);
+    showEl('vtxo1', 500);
+    showEl('vtxo2', 600);
+    setTimeout(function() { drawAll(); showGroup('g1', 100); }, 700);
+
+    showEl('arkTx1', 1100);
+    showGroup('g2', 1200);
+
+    showEl('vtxo3', 1500);
+    showGroup('g3', 1600);
+
+    showEl('batchOut2', 1800);
+    showEl('vtxo4', 1900);
+    showEl('vtxo5', 2000);
+    showGroup('g4', 2100);
+
+    showEl('arkTx2', 2400);
+    showGroup('g5', 2500);
+
+    showEl('vtxo6', 2800);
+    showEl('vtxo7', 2900);
+    showGroup('g6', 3000);
+  }
+
+  if (typeof IntersectionObserver !== 'undefined') {
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { obs.disconnect(); run(); }
+    }, { threshold: 0.3 });
+    obs.observe(diagram);
+  } else { run(); }
+})();
+</script>
+</body>
+</html>

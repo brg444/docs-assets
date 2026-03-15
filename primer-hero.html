@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geist/v3/gyByhwUxId8gMEwcGFWNOITd.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geistmono/v3/or3yQ6H81JOCPFhYqdDhrClU5lLDA2a8iBMX.woff2) format('woff2');
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: transparent;
+  font-family: 'Geist', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.scene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  padding: 0 48px;
+  gap: 0;
+}
+
+/* Boxes */
+.box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 90px;
+  border-radius: 10px;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.box.show { opacity: 1; transform: translateY(0); }
+
+.box.client {
+  background: #fff;
+  border: 1px solid #EBEBEB;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.box.server {
+  background: #381993;
+  border: 1px solid rgba(56,25,147,0.3);
+  box-shadow: 0 2px 8px rgba(56,25,147,0.15);
+}
+
+.box-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.box-sub {
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.client .box-title { color: #1A1A1A; }
+.client .box-sub { color: #999; }
+
+.server .box-title { color: #fff; }
+.server .box-sub { color: rgba(255,255,255,0.5); }
+
+/* Connector */
+.connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 120px;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.connector.show { opacity: 1; }
+
+.conn-line {
+  height: 1px;
+  width: 100%;
+  background: #EBEBEB;
+  position: relative;
+  overflow: hidden;
+}
+
+.conn-dot {
+  position: absolute;
+  top: -2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #381993;
+  opacity: 0;
+}
+
+.conn-label {
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  color: #C0C0C0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Labels under boxes */
+.label {
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  color: #999;
+  letter-spacing: 0.02em;
+  margin-top: 8px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.label.show { opacity: 1; }
+
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+@keyframes moveDot {
+  0% { left: -5px; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { left: calc(100% + 5px); opacity: 0; }
+}
+
+.conn-dot {
+  animation: moveDot 2s ease-in-out infinite;
+}
+
+.scene.paused .conn-dot { animation-play-state: paused; }
+
+@media (prefers-color-scheme: dark) {
+  body { background: #101013; }
+  .box.client { background: #fff; }
+  .box.server { background: #381993; }
+  .conn-line { background: #333; }
+  .conn-label { color: #999; }
+  .label { color: #999; }
+}
+
+@media (max-width: 640px) {
+  .scene {
+    flex-direction: column;
+    height: auto;
+    padding: 24px 16px;
+    gap: 0;
+  }
+  .connector {
+    width: auto;
+    height: auto;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 6px 0;
+  }
+  .conn-line {
+    display: none;
+  }
+  .conn-dot {
+    display: none;
+  }
+  .conn-label {
+    color: #C0C0C0;
+    font-size: 8px;
+  }
+  .box { width: 200px; height: 72px; }
+}
+</style>
+</head>
+<body>
+
+<div class="scene" id="scene">
+  <div class="col">
+    <div class="box client" id="client">
+      <div class="box-title">Client</div>
+      <div class="box-sub">SDK + Wallet</div>
+    </div>
+    <div class="label" id="l1">Your application</div>
+  </div>
+
+  <div class="connector" id="conn">
+    <div class="conn-line"><div class="conn-dot"></div></div>
+    <div class="conn-label">gRPC</div>
+  </div>
+
+  <div class="col">
+    <div class="box server" id="server">
+      <svg width="16" height="16" viewBox="0 0 35 35" fill="none">
+        <path d="M0 8.75L8.75 0H26.25L35 8.75V17.5H26.25V8.75H8.75V17.5H0L0 8.75Z" fill="rgba(255,255,255,0.7)"/>
+        <path d="M8.75 26.25V17.5H26.25V26.25H8.75Z" fill="rgba(255,255,255,0.7)"/>
+        <path d="M8.75 26.25H0V35H8.75V26.25Z" fill="rgba(255,255,255,0.7)"/>
+        <path d="M26.25 26.25V35H35V26.25H26.25Z" fill="rgba(255,255,255,0.7)"/>
+      </svg>
+      <div class="box-title">Arkade Server</div>
+      <div class="box-sub">Operator</div>
+    </div>
+    <div class="label" id="l2">Offchain execution</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var scene = document.getElementById('scene');
+
+  scene.addEventListener('mouseenter', function() { scene.classList.add('paused'); });
+  scene.addEventListener('mouseleave', function() { scene.classList.remove('paused'); });
+
+  function show(id, delay) {
+    setTimeout(function() {
+      document.getElementById(id).classList.add('show');
+    }, delay);
+  }
+
+  function run() {
+    show('client', 200);
+    show('l1', 300);
+    show('conn', 500);
+    show('server', 700);
+    show('l2', 800);
+  }
+
+  if (typeof IntersectionObserver !== 'undefined') {
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { obs.disconnect(); run(); }
+    }, { threshold: 0.3 });
+    obs.observe(scene);
+  } else {
+    run();
+  }
+})();
+</script>
+</body>
+</html>

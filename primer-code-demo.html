@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: transparent; font-family: 'Geist', 'SF Pro', -apple-system, 'Helvetica Neue', sans-serif; }
+.panel { background: #fff; border-radius: 12px; border: 1px solid #E4E4E8; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06); }
+.header { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid #EDEDF0; gap: 10px; }
+.header-text { font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', Consolas, monospace; color: #6B6B80; font-size: 12px; letter-spacing: 0.3px; flex: 1; }
+.copy-btn { padding: 4px 12px; border-radius: 6px; border: 1px solid #E4E4E8; background: none; color: #6B6B80; font-size: 11px; font-weight: 500; cursor: pointer; user-select: none; font-family: inherit; transition: color 0.2s; }
+.copy-btn:hover { color: #1A1A2E; border-color: #ccc; }
+.copy-btn.copied { color: #16A34A; border-color: #16A34A; }
+.code-body { padding: 14px 20px; font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', Consolas, monospace; font-size: 13px; line-height: 21px; }
+.code-line { display: flex; white-space: pre; }
+.line-num { color: #C0C0CC; width: 28px; text-align: right; margin-right: 16px; user-select: none; flex-shrink: 0; font-size: 11px; }
+.spacer { height: 8px; }
+.cursor { color: #391998; font-weight: 700; animation: blink 0.8s step-end infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+.line-group { border-left: 2px solid transparent; padding-left: 0; transition: border-color 0.3s, background 0.3s; margin: 0 -20px; padding: 0 18px; overflow: hidden; }
+.line-group.ran { border-left-color: #391998; background: rgba(57,25,152,0.02); }
+.line-group.hidden { max-height: 0; margin-top: 0; margin-bottom: 0; opacity: 0; }
+.line-group.reveal { max-height: 300px; opacity: 1; transition: max-height 0.4s ease-out, opacity 0.3s ease-out; }
+.spacer-wrap { overflow: hidden; }
+.spacer-wrap.hidden { max-height: 0; opacity: 0; }
+.spacer-wrap.reveal { max-height: 20px; opacity: 1; transition: max-height 0.3s ease-out, opacity 0.3s ease-out; }
+.result { display: flex; align-items: center; gap: 6px; margin: 3px 0 3px 46px; padding: 2px 10px; border-radius: 5px; background: #F0FDF4; width: fit-content; opacity: 0; transform: translateX(12px); transition: opacity 0.3s ease-out, transform 0.3s ease-out; }
+.result.show { opacity: 1; transform: translateX(0); }
+.result-text { color: #16A34A; font-size: 11px; font-weight: 600; font-family: 'Geist', 'SF Pro', -apple-system, sans-serif; }
+.result-detail { color: #9E9EB0; font-size: 10px; font-family: 'Geist', 'SF Pro', -apple-system, sans-serif; }
+.result-check { flex-shrink: 0; }
+.sep { height: 14px; width: 1px; background: #EDEDF0; }
+
+@media (max-width: 640px) {
+  .code-body { font-size: 9px; line-height: 16px; padding: 10px 12px; overflow-x: hidden; }
+  .line-num { font-size: 8px; width: 20px; margin-right: 8px; }
+  .header-text { font-size: 10px; }
+  .copy-btn { font-size: 9px; padding: 3px 8px; }
+  .header { padding: 8px 12px; }
+  .result { margin-left: 30px; }
+  .result-text { font-size: 9px; }
+  .result-detail { font-size: 8px; }
+  .line-group { margin: 0 -12px; padding: 0 10px; }
+}
+</style>
+</head>
+<body>
+<div class="panel" id="panel">
+  <div class="header">
+    <svg width="24" height="24" viewBox="0 0 1024 1024" fill="none" style="flex-shrink:0">
+      <rect width="1024" height="1024" rx="180" fill="#391998"/>
+      <rect x="512" y="256" width="128" height="128" fill="#F6F6F6"/>
+      <rect x="384" y="256" width="128" height="128" fill="#F6F6F6"/>
+      <rect x="640" y="384" width="128" height="128" fill="#F6F6F6"/>
+      <rect width="128" height="128" transform="matrix(-1 0 0 1 384 384)" fill="#F6F6F6"/>
+      <rect width="128" height="128" transform="matrix(-1 0 0 1 512 512)" fill="#F6F6F6"/>
+      <rect width="128" height="128" transform="matrix(-1 0 0 1 640 512)" fill="#F6F6F6"/>
+      <rect x="640" y="640" width="128" height="128" fill="#F6F6F6"/>
+      <rect width="128" height="128" transform="matrix(-1 0 0 1 384 640)" fill="#F6F6F6"/>
+      <path d="M640 256L768 384H640V256Z" fill="#F6F6F6"/>
+      <path d="M384 256L256 384H384V256Z" fill="#F6F6F6"/>
+    </svg>
+    <div class="sep"></div>
+    <span class="header-text">getting started</span>
+    <button class="copy-btn" id="copyBtn">Copy</button>
+  </div>
+  <div class="code-body" id="codeBody"></div>
+</div>
+
+<script>
+var K="#E8664A",S="#2E7D32",C="#9E9EB0",N="#7B1FA2",I="#1A1A2E",P="#6B6B80",PL="#4A22B0";
+
+var introLines=[
+  [{t:"import ",c:K},{t:"{ MnemonicIdentity, Wallet }",c:I},{t:" from ",c:K},{t:"'@arkade-os/sdk'",c:S}],
+  null,
+  [{t:"// 1. Connect to an Arkade operator",c:C}],
+  [{t:"const ",c:K},{t:"wallet ",c:I},{t:"= ",c:P},{t:"await ",c:K},{t:"Wallet.create",c:I},{t:"({",c:P}],
+  [{t:"  identity: ",c:I},{t:"MnemonicIdentity",c:PL},{t:".fromMnemonic(",c:P},{t:"\"your seed phrase\"",c:S},{t:")",c:P},{t:",",c:P}],
+  [{t:"  arkServerUrl: ",c:I},{t:"'https://arkade.computer'",c:S},{t:",",c:P}],
+  [{t:"})",c:P}],
+];
+
+var groups=[
+  {
+    lines:[
+      [{t:"// 2. Transact \u2014 instant, near-zero fees",c:C}],
+      [{t:"const ",c:K},{t:"txid ",c:I},{t:"= ",c:P},{t:"await ",c:K},{t:"wallet.sendBitcoin",c:I},{t:"(",c:P}],
+      [{t:"  ",c:P},{t:"'ark1q...recipient'",c:S},{t:",",c:P}],
+      [{t:"  ",c:P},{t:"50_000n",c:N}],
+      [{t:")",c:P}],
+    ],
+    result:{text:"Payment sent",detail:"instant preconfirmation"},
+  },
+  {
+    lines:[
+      [{t:"// 3. Settle \u2014 check what needs anchoring",c:C}],
+      [{t:"const ",c:K},{t:"vtxos ",c:I},{t:"= ",c:P},{t:"await ",c:K},{t:"wallet.getVtxos",c:I},{t:"()",c:P}],
+    ],
+    result:{text:"3 VTXOs loaded",detail:"1 preconfirmed, 2 settled"},
+  },
+  {
+    lines:[
+      [{t:"// 4. Exit \u2014 withdraw to Bitcoin L1",c:C}],
+      [{t:"const ",c:K},{t:"address ",c:I},{t:"= ",c:P},{t:"await ",c:K},{t:"wallet.getAddress",c:I},{t:"()",c:P}],
+    ],
+    result:{text:"Address ready",detail:"unilateral exit available"},
+  },
+];
+
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+var checkSvg='<svg class="result-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+var charCounts=[], totalChars=0;
+for(var i=0;i<introLines.length;i++){
+  var line=introLines[i];
+  if(line===null){charCounts.push(0);}
+  else{var n=0;for(var j=0;j<line.length;j++)n+=line[j].t.length;charCounts.push(n);}
+  totalChars+=charCounts[i];
+}
+
+var ci=0, lastTime=0, paused=false, typingDone=false, allDone=false;
+var executed=0, timers=[];
+var bodyEl=document.getElementById("codeBody");
+var panel=document.getElementById("panel");
+
+function renderTyping(){
+  var html="",vis=Math.floor(ci),charOff=0,lineNum=1;
+  for(var i=0;i<introLines.length;i++){
+    var line=introLines[i];
+    if(line===null){html+='<div class="spacer"></div>';continue;}
+    var lc=charCounts[i],ls=charOff;charOff+=lc;
+    if(vis<=ls)continue;
+    var lv=Math.min(lc,vis-ls),rd=0;
+    html+='<div class="code-line"><span class="line-num">'+lineNum+'</span><span>';
+    for(var ti=0;ti<line.length;ti++){
+      if(rd>=lv)break;
+      var tok=line[ti],sh=Math.min(tok.t.length,lv-rd);rd+=tok.t.length;
+      html+='<span style="color:'+tok.c+'">'+esc(tok.t.slice(0,sh))+'</span>';
+    }
+    if(ls+lc>vis)html+='<span class="cursor">|</span>';
+    html+='</span></div>';
+    lineNum++;
+  }
+  bodyEl.innerHTML=html;
+}
+
+function renderStatic(){
+  var html="",lineNum=1;
+  for(var i=0;i<introLines.length;i++){
+    var line=introLines[i];
+    if(line===null){html+='<div class="spacer"></div>';continue;}
+    html+='<div class="code-line"><span class="line-num">'+lineNum+'</span><span>';
+    for(var ti=0;ti<line.length;ti++){
+      var tok=line[ti];
+      html+='<span style="color:'+tok.c+'">'+esc(tok.t)+'</span>';
+    }
+    html+='</span></div>';
+    lineNum++;
+  }
+  for(var gi=0;gi<groups.length;gi++){
+    var g=groups[gi];
+    html+='<div class="spacer-wrap hidden" id="s'+gi+'"><div class="spacer"></div></div>';
+    html+='<div class="line-group hidden" id="g'+gi+'">';
+    for(var li=0;li<g.lines.length;li++){
+      html+='<div class="code-line"><span class="line-num">'+lineNum+'</span><span>';
+      for(var ti=0;ti<g.lines[li].length;ti++){
+        var tok=g.lines[li][ti];
+        html+='<span style="color:'+tok.c+'">'+esc(tok.t)+'</span>';
+      }
+      html+='</span></div>';
+      lineNum++;
+    }
+    if(g.result){
+      html+='<div class="result" id="r'+gi+'">'+checkSvg+'<span class="result-text">'+g.result.text+'</span><span class="result-detail">'+g.result.detail+'</span></div>';
+    }
+    html+='</div>';
+  }
+  bodyEl.innerHTML=html;
+}
+
+function revealGroup(gi){
+  var el=document.getElementById("g"+gi);
+  var sp=document.getElementById("s"+gi);
+  if(el){el.classList.remove("hidden");el.classList.add("reveal");}
+  if(sp){sp.classList.remove("hidden");sp.classList.add("reveal");}
+}
+
+function runNext(){
+  if(paused){return;}
+  if(executed>=groups.length){allDone=true;return;}
+  revealGroup(executed);
+  var el=document.getElementById("g"+executed);
+  if(el)el.classList.add("ran");
+  var r=document.getElementById("r"+executed);
+  if(r){
+    timers.push(setTimeout(function(r){return function(){r.classList.add("show")}}(r),400));
+  }
+  executed++;
+  if(executed<groups.length){
+    timers.push(setTimeout(runNext,900));
+  } else {
+    allDone=true;
+  }
+}
+
+function typeTick(time){
+  if(paused){lastTime=0;requestAnimationFrame(typeTick);return;}
+  if(!lastTime)lastTime=time;
+  var dt=time-lastTime;lastTime=time;
+  if(ci<totalChars){
+    ci=Math.min(totalChars,ci+(dt/1000)*50);
+    renderTyping();
+    requestAnimationFrame(typeTick);
+  } else if(!typingDone){
+    typingDone=true;
+    renderStatic();
+    timers.push(setTimeout(runNext,600));
+  }
+}
+
+panel.addEventListener("mouseenter",function(){
+  paused=true;
+});
+
+panel.addEventListener("mouseleave",function(){
+  paused=false;
+  lastTime=0;
+  if(!typingDone){
+    requestAnimationFrame(typeTick);
+  }
+  else if(!allDone && executed<groups.length){
+    runNext();
+  }
+});
+
+function startAnimation(){
+  renderTyping();
+  requestAnimationFrame(typeTick);
+}
+
+if(typeof IntersectionObserver!=="undefined"){
+  var obs=new IntersectionObserver(function(entries){
+    if(entries[0].isIntersecting){
+      obs.disconnect();
+      startAnimation();
+    }
+  },{threshold:0.3});
+  obs.observe(panel);
+} else {
+  startAnimation();
+}
+
+var copyBtn=document.getElementById("copyBtn");
+function getFullSource(){
+  var out="";
+  for(var i=0;i<introLines.length;i++){
+    if(i>0)out+="\n";
+    if(introLines[i]!==null)for(var j=0;j<introLines[i].length;j++)out+=introLines[i][j].t;
+  }
+  for(var gi=0;gi<groups.length;gi++){
+    out+="\n";
+    for(var li=0;li<groups[gi].lines.length;li++){
+      out+="\n";
+      for(var ti=0;ti<groups[gi].lines[li].length;ti++)out+=groups[gi].lines[li][ti].t;
+    }
+  }
+  return out;
+}
+copyBtn.addEventListener("click",function(e){
+  e.stopPropagation();
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(getFullSource()).then(function(){
+      copyBtn.textContent="Copied";
+      copyBtn.classList.add("copied");
+      setTimeout(function(){copyBtn.textContent="Copy";copyBtn.classList.remove("copied");},2000);
+    });
+  }
+});
+</script>
+</body>
+</html>

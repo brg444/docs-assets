@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geist/v3/gyByhwUxId8gMEwcGFWNOITd.woff2) format('woff2');
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: transparent;
+  font-family: 'Geist', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.diagram {
+  position: relative;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0 24px;
+}
+
+.svg-lines {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.svg-lines line {
+  stroke: #FF5327;
+  stroke-width: 1.5;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.svg-lines line.show { opacity: 1; }
+.svg-lines line.dashed {
+  stroke-dasharray: 6 4;
+}
+
+.vtxo {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 1.5px solid #C0C0C0;
+  outline: 1.5px solid #C0C0C0;
+  outline-offset: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #575757;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  flex-shrink: 0;
+  background: #fff;
+}
+.vtxo.show { opacity: 1; }
+
+.spacer {
+  width: 60px;
+  flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  body { background: #101013; }
+  .vtxo { background: #fff; }
+}
+
+@media (max-width: 640px) {
+  .diagram {
+    height: 120px;
+    padding: 0 10px;
+  }
+  .vtxo {
+    width: 56px;
+    height: 56px;
+    font-size: 7px;
+    border-width: 1px;
+    outline-width: 1px;
+    outline-offset: 3px;
+  }
+  .spacer { width: 30px; }
+  .svg-lines line { stroke-width: 1; }
+}
+</style>
+</head>
+<body>
+
+<div class="diagram" id="diagram">
+  <svg class="svg-lines" id="svgLines"></svg>
+  <div class="vtxo" id="v1">VTXO 1</div>
+  <div class="spacer"></div>
+  <div class="vtxo" id="v2">VTXO 2</div>
+  <div class="spacer"></div>
+  <div class="vtxo" id="v3">VTXO 3</div>
+  <div class="spacer"></div>
+  <div class="vtxo" id="v4">VTXO X</div>
+</div>
+
+<script>
+(function() {
+  var diagram = document.getElementById('diagram');
+  var svg = document.getElementById('svgLines');
+  var isMobile = window.matchMedia('(max-width: 640px)').matches;
+  var arrowLen = isMobile ? 4 : 6;
+  var arrowW = isMobile ? 3 : 4;
+
+  function getPos(el) {
+    var r = el.getBoundingClientRect();
+    var d = diagram.getBoundingClientRect();
+    return {
+      left: r.left - d.left,
+      right: r.right - d.left,
+      midY: r.top + r.height / 2 - d.top
+    };
+  }
+
+  function addLine(x1, y1, x2, y2, cls) {
+    var l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', x1);
+    l.setAttribute('y1', y1);
+    l.setAttribute('x2', x2);
+    l.setAttribute('y2', y2);
+    if (cls) l.setAttribute('class', cls);
+    svg.appendChild(l);
+    return l;
+  }
+
+  function drawArrow(fromEl, toEl, group, dashed) {
+    var f = getPos(fromEl);
+    var t = getPos(toEl);
+    var outlineOffset = isMobile ? 4 : 6;
+    var x1 = f.right + outlineOffset;
+    var x2 = t.left - outlineOffset;
+    var y = f.midY;
+    var cls = dashed ? 'dashed' : '';
+    var line = addLine(x1, y, x2, y, cls);
+    line.setAttribute('data-group', group);
+    var a1 = addLine(x2 - arrowLen, y - arrowW, x2, y, cls);
+    a1.setAttribute('data-group', group);
+    var a2 = addLine(x2 - arrowLen, y + arrowW, x2, y, cls);
+    a2.setAttribute('data-group', group);
+  }
+
+  function showGroup(group, delay) {
+    setTimeout(function() {
+      var lines = svg.querySelectorAll('[data-group="' + group + '"]');
+      lines.forEach(function(l) { l.classList.add('show'); });
+    }, delay);
+  }
+
+  function showEl(id, delay) {
+    setTimeout(function() {
+      document.getElementById(id).classList.add('show');
+    }, delay);
+  }
+
+  function drawAll() {
+    svg.innerHTML = '';
+    var v1 = document.getElementById('v1');
+    var v2 = document.getElementById('v2');
+    var v3 = document.getElementById('v3');
+    var v4 = document.getElementById('v4');
+    drawArrow(v1, v2, 'g1', false);
+    drawArrow(v2, v3, 'g2', false);
+    drawArrow(v3, v4, 'g3', true);
+  }
+
+  function run() {
+    showEl('v1', 200);
+    setTimeout(function() {
+      drawAll();
+      showGroup('g1', 100);
+    }, 400);
+    showEl('v2', 600);
+    showGroup('g2', 900);
+    showEl('v3', 1000);
+    showGroup('g3', 1300);
+    showEl('v4', 1500);
+  }
+
+  if (typeof IntersectionObserver !== 'undefined') {
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { obs.disconnect(); run(); }
+    }, { threshold: 0.3 });
+    obs.observe(diagram);
+  } else {
+    run();
+  }
+})();
+</script>
+</body>
+</html>

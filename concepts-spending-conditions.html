@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geist/v3/gyByhwUxId8gMEwcGFWNOITd.woff2) format('woff2');
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: transparent;
+  font-family: 'Geist', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.diagram {
+  position: relative;
+  height: 340px;
+  padding: 10px 0;
+}
+
+/* SVG lines layer */
+.svg-lines {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.svg-lines line {
+  stroke: #FF5327;
+  stroke-width: 1.5;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.svg-lines line.show { opacity: 1; }
+
+/* Source box (solid orange) */
+.source-box {
+  position: absolute;
+  left: 4%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #FF5327;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 2;
+}
+.source-box.show { opacity: 1; }
+
+/* Root node (double border: solid inner + dashed outer) */
+.root-box {
+  position: absolute;
+  left: 24%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #fff;
+  border: 1.5px solid #C0C0C0;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #1A1A1A;
+  text-align: center;
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.root-box::before {
+  content: '';
+  position: absolute;
+  top: -5px; left: -5px; right: -5px; bottom: -5px;
+  border: 1.5px dashed #C0C0C0;
+  border-radius: 6px;
+}
+.root-box.show { opacity: 1; }
+
+/* Intermediate nodes (dashed border) */
+.mid-box {
+  position: absolute;
+  background: #fff;
+  border: 1.5px dashed #C0C0C0;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #1A1A1A;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.mid-box.show { opacity: 1; }
+
+#midTop {
+  left: 46%;
+  top: 24%;
+  transform: translateY(-50%);
+}
+#midBot {
+  left: 46%;
+  top: 76%;
+  transform: translateY(-50%);
+}
+
+/* Leaf nodes (dashed border) */
+.leaf-box {
+  position: absolute;
+  background: #fff;
+  border: 1.5px dashed #C0C0C0;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #1A1A1A;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.leaf-box.show { opacity: 1; }
+
+#leafA { left: 66%; top: 6%; }
+#leafB { left: 66%; top: 34%; }
+#leafC { left: 66%; top: 60%; }
+#leafD { left: 66%; top: 86%; }
+
+@media (prefers-color-scheme: dark) {
+  body { background: #101013; }
+  .root-box { background: #fff; }
+  .root-box::before { border-color: #C0C0C0; }
+  .mid-box { background: #fff; }
+  .leaf-box { background: #fff; }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .diagram {
+    height: 260px;
+    padding: 4px 0;
+  }
+  .source-box {
+    left: 1%;
+    padding: 4px 5px;
+    font-size: 6px;
+  }
+  .root-box {
+    left: 18%;
+    padding: 4px 5px;
+    font-size: 5.5px;
+    line-height: 1.2;
+  }
+  .root-box::before {
+    top: -3px; left: -3px; right: -3px; bottom: -3px;
+  }
+  .mid-box {
+    padding: 3px 5px;
+    font-size: 6px;
+  }
+  #midTop { left: 42%; }
+  #midBot { left: 42%; }
+  .leaf-box {
+    padding: 3px 4px;
+    font-size: 5.5px;
+    white-space: normal;
+    max-width: 36%;
+    text-align: center;
+    line-height: 1.2;
+  }
+  #leafA { left: 58%; top: 11%; }
+  #leafB { left: 58%; top: 30%; }
+  #leafC { left: 58%; top: 63%; }
+  #leafD { left: 58%; top: 82%; }
+  .svg-lines line {
+    stroke-width: 1;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="diagram" id="diagram">
+  <svg class="svg-lines" id="svgLines"></svg>
+
+  <div class="source-box" id="sourceBox">Batch Output</div>
+
+  <div class="root-box" id="rootBox">
+    A+B+C+D+S<br>
+    <span style="font-weight:400;color:#575757">OR</span><br>
+    S after expiry
+  </div>
+
+  <div class="mid-box" id="midTop">A+B+S</div>
+  <div class="mid-box" id="midBot">C+D+S</div>
+
+  <div class="leaf-box" id="leafA">A+S OR A after delay</div>
+  <div class="leaf-box" id="leafB">B+S OR B after delay</div>
+  <div class="leaf-box" id="leafC">C+S OR C after delay</div>
+  <div class="leaf-box" id="leafD">D+S OR D after delay</div>
+</div>
+
+<script>
+(function() {
+  var diagram = document.getElementById('diagram');
+  var svg = document.getElementById('svgLines');
+  var isMobile = window.matchMedia('(max-width: 640px)').matches;
+  var arrowLen = isMobile ? 4 : 6;
+  var arrowW = isMobile ? 3 : 4;
+
+  function addLine(x1, y1, x2, y2, cls) {
+    var l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', x1);
+    l.setAttribute('y1', y1);
+    l.setAttribute('x2', x2);
+    l.setAttribute('y2', y2);
+    if (cls) l.setAttribute('data-group', cls);
+    svg.appendChild(l);
+    return l;
+  }
+
+  function getPos(el) {
+    var r = el.getBoundingClientRect();
+    var d = diagram.getBoundingClientRect();
+    return {
+      left: r.left - d.left,
+      right: r.right - d.left,
+      top: r.top - d.top,
+      bottom: r.bottom - d.top,
+      midY: r.top + r.height / 2 - d.top,
+      midX: r.left + r.width / 2 - d.left
+    };
+  }
+
+  function drawStraight(from, to, group) {
+    var f = getPos(from);
+    var t = getPos(to);
+    addLine(f.right, f.midY, t.left, t.midY, group);
+    addLine(t.left - arrowLen, t.midY - arrowW, t.left, t.midY, group);
+    addLine(t.left - arrowLen, t.midY + arrowW, t.left, t.midY, group);
+  }
+
+  function drawFork(from, to1, to2, group) {
+    var f = getPos(from);
+    var t1 = getPos(to1);
+    var t2 = getPos(to2);
+    var mx = f.right + (Math.min(t1.left, t2.left) - f.right) * 0.5;
+
+    addLine(f.right, f.midY, mx, f.midY, group);
+    addLine(mx, t1.midY, mx, t2.midY, group);
+    addLine(mx, t1.midY, t1.left, t1.midY, group);
+    addLine(mx, t2.midY, t2.left, t2.midY, group);
+    addLine(t1.left - arrowLen, t1.midY - arrowW, t1.left, t1.midY, group);
+    addLine(t1.left - arrowLen, t1.midY + arrowW, t1.left, t1.midY, group);
+    addLine(t2.left - arrowLen, t2.midY - arrowW, t2.left, t2.midY, group);
+    addLine(t2.left - arrowLen, t2.midY + arrowW, t2.left, t2.midY, group);
+  }
+
+  function showGroup(group, delay) {
+    setTimeout(function() {
+      var lines = svg.querySelectorAll('line[data-group="' + group + '"]');
+      lines.forEach(function(l) { l.classList.add('show'); });
+    }, delay);
+  }
+
+  function showEl(id, delay) {
+    setTimeout(function() {
+      var el = document.getElementById(id);
+      if (el) el.classList.add('show');
+    }, delay);
+  }
+
+  function drawAll() {
+    svg.innerHTML = '';
+    var sourceBox = document.getElementById('sourceBox');
+    var rootBox = document.getElementById('rootBox');
+    var midTop = document.getElementById('midTop');
+    var midBot = document.getElementById('midBot');
+    var leafA = document.getElementById('leafA');
+    var leafB = document.getElementById('leafB');
+    var leafC = document.getElementById('leafC');
+    var leafD = document.getElementById('leafD');
+
+    drawStraight(sourceBox, rootBox, 'g1');
+    drawFork(rootBox, midTop, midBot, 'g2');
+    drawFork(midTop, leafA, leafB, 'g3');
+    drawFork(midBot, leafC, leafD, 'g4');
+  }
+
+  function run() {
+    // Show elements and lines with staggered timing
+    showEl('sourceBox', 200);
+
+    // Draw lines after layout is stable
+    setTimeout(function() {
+      drawAll();
+      showGroup('g1', 100);
+    }, 350);
+
+    showEl('rootBox', 600);
+    setTimeout(function() { showGroup('g2', 0); }, 900);
+    showEl('midTop', 1000);
+    showEl('midBot', 1100);
+    setTimeout(function() { showGroup('g3', 0); }, 1400);
+    showEl('leafA', 1500);
+    showEl('leafB', 1600);
+    setTimeout(function() { showGroup('g4', 0); }, 1800);
+    showEl('leafC', 1900);
+    showEl('leafD', 2000);
+  }
+
+  if (typeof IntersectionObserver !== 'undefined') {
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { obs.disconnect(); run(); }
+    }, { threshold: 0.3 });
+    obs.observe(diagram);
+  } else {
+    run();
+  }
+})();
+</script>
+</body>
+</html>

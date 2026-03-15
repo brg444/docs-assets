@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geist/v3/gyByhwUxId8gMEwcGFWNOITd.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/geistmono/v3/or3yQ6H81JOCPFhYqdDhrClU5lLDA2a8iBMX.woff2) format('woff2');
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: transparent;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.scene {
+  position: relative;
+  height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ===== MAIN WALLET CARD ===== */
+.wallet-card {
+  position: absolute;
+  left: 12%;
+  top: 50%;
+  transform: translateY(-50%) translateY(8px);
+  width: 210px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #EBEBEB;
+  padding: 14px 16px 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 30px rgba(0,0,0,0.06);
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.wallet-card.show {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+.wc-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.wc-logo { width: 18px; height: 18px; flex-shrink: 0; }
+
+.wc-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.wc-balance-label {
+  font-size: 10px;
+  color: #999;
+  font-weight: 400;
+  margin-bottom: 2px;
+}
+
+.wc-balance {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1A1A1A;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wc-balance-unit {
+  font-size: 12px;
+  font-weight: 500;
+  color: #999;
+  margin-left: 3px;
+}
+
+.wc-fiat {
+  font-size: 10px;
+  color: #999;
+  margin-bottom: 12px;
+}
+
+.wc-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.wc-btn {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 6px;
+  font-family: 'Geist', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.wc-btn-send {
+  background: #1A1A1A;
+  color: #fff;
+}
+
+.wc-btn-receive {
+  background: #F2F2F2;
+  color: #1A1A1A;
+  border: 1px solid #EBEBEB;
+}
+
+.wc-btn-icon { font-size: 10px; }
+
+/* Mini activity bars */
+.wc-activity {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+}
+
+.wc-bar {
+  width: 4px;
+  border-radius: 1px;
+  background: #EBEBEB;
+  transition: height 0.4s ease, background 0.4s ease;
+}
+
+.wc-bar.accent { background: #381993; }
+
+/* ===== PAYMENT CARD ===== */
+.payment-card {
+  position: absolute;
+  right: 22%;
+  top: 8%;
+  width: 230px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #EBEBEB;
+  padding: 16px 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 30px rgba(0,0,0,0.06);
+  z-index: 3;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.payment-card.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.pc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pc-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #F2F2F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+  color: #381993;
+  font-weight: 600;
+}
+
+.pc-info { flex: 1; }
+
+.pc-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.pc-addr {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  color: #999;
+}
+
+.pc-amount {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A1A1A;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pc-divider {
+  height: 1px;
+  background: #F2F2F2;
+  margin: 12px 0;
+}
+
+.pc-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pc-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #381993;
+  background: rgba(56,25,147,0.06);
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.pc-time {
+  font-size: 10px;
+  color: #999;
+}
+
+/* ===== PORTFOLIO CARD ===== */
+.portfolio-card {
+  position: absolute;
+  right: 26%;
+  bottom: 4%;
+  width: 220px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #EBEBEB;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.05);
+  z-index: 1;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.portfolio-card.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.pf-label {
+  font-size: 10px;
+  color: #999;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+
+.pf-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.pf-row + .pf-row {
+  border-top: 1px solid #F5F5F5;
+}
+
+.pf-icon {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pf-info { flex: 1; }
+
+.pf-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.pf-sub {
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  color: #C0C0C0;
+}
+
+.pf-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1A1A1A;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pf-change {
+  font-size: 9px;
+  text-align: right;
+}
+
+.pf-up { color: #34C759; }
+.pf-down { color: #999; }
+
+/* ===== MOBILE ===== */
+@media (max-width: 640px) {
+  .scene {
+    height: 100vh;
+    height: 100dvh;
+    padding: 24px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .wallet-card,
+  .payment-card,
+  .portfolio-card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - 40px);
+    max-width: 320px;
+    right: auto;
+    bottom: auto;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .wallet-card.mobile-active,
+  .payment-card.mobile-active,
+  .portfolio-card.mobile-active {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  /* Override desktop .show transforms */
+  .wallet-card.show,
+  .payment-card.show,
+  .portfolio-card.show {
+    opacity: 0;
+    transform: translate(-50%, -50%);
+  }
+  .wallet-card.show.mobile-active,
+  .payment-card.show.mobile-active,
+  .portfolio-card.show.mobile-active {
+    opacity: 1;
+  }
+
+  /* Carousel dots */
+  .carousel-dots {
+    display: flex !important;
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 6px;
+  }
+  .carousel-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #EBEBEB;
+    transition: background 0.3s ease;
+  }
+  .carousel-dot.active {
+    background: #381993;
+  }
+}
+
+.carousel-dots { display: none; }
+
+@media (prefers-color-scheme: dark) {
+  body { background: #101013; }
+}
+</style>
+</head>
+<body>
+
+<div class="scene" id="scene">
+
+  <!-- Main wallet card -->
+  <div class="wallet-card" id="walletCard">
+    <div class="wc-header">
+      <svg class="wc-logo" viewBox="0 0 35 35" fill="none">
+        <path d="M0 8.75L8.75 0H26.25L35 8.75V17.5H26.25V8.75H8.75V17.5H0L0 8.75Z" fill="#381993"/>
+        <path d="M8.75 26.25V17.5H26.25V26.25H8.75Z" fill="#381993"/>
+        <path d="M8.75 26.25H0V35H8.75V26.25Z" fill="#381993"/>
+        <path d="M26.25 26.25V35H35V26.25H26.25Z" fill="#381993"/>
+      </svg>
+      <span class="wc-name">Agent 1</span>
+    </div>
+    <div class="wc-balance-label">Total Balance</div>
+    <div class="wc-balance">$17,450</div>
+    <div class="wc-buttons">
+      <div class="wc-btn wc-btn-send"><span class="wc-btn-icon">&#8599;</span> Send</div>
+      <div class="wc-btn wc-btn-receive"><span class="wc-btn-icon">&#8601;</span> Receive</div>
+    </div>
+  </div>
+
+  <!-- Payment card -->
+  <div class="payment-card" id="paymentCard">
+    <div class="pc-row">
+      <div class="pc-avatar">A</div>
+      <div class="pc-info">
+        <div class="pc-name">Alice</div>
+        <div class="pc-addr">tark1qx8v...m4f7</div>
+      </div>
+      <div class="pc-amount">50,000</div>
+    </div>
+    <div class="pc-divider"></div>
+    <div class="pc-row">
+      <div class="pc-avatar" style="background:#FAFAFA;color:#575757;font-size:12px;">B</div>
+      <div class="pc-info">
+        <div class="pc-name">Bob</div>
+        <div class="pc-addr">tark1qz7p...v9k3</div>
+      </div>
+      <div class="pc-amount">13,206</div>
+    </div>
+    <div class="pc-divider"></div>
+    <div class="pc-status">
+      <span class="pc-badge">Instant</span>
+      <span class="pc-time">Just now</span>
+    </div>
+  </div>
+
+  <!-- Portfolio card -->
+  <div class="portfolio-card" id="portfolioCard">
+    <div class="pf-label">Balances</div>
+    <div class="pf-row">
+      <div class="pf-icon" style="background:#F7931A;color:#fff;">&#8383;</div>
+      <div class="pf-info">
+        <div class="pf-name">Bitcoin</div>
+        <div class="pf-sub">0.025 BTC</div>
+      </div>
+      <div>
+        <div class="pf-value">$2,450</div>
+        <div class="pf-change pf-up">+2.4%</div>
+      </div>
+    </div>
+    <div class="pf-row">
+      <div class="pf-icon" style="background:#34C759;color:#fff;">$</div>
+      <div class="pf-info">
+        <div class="pf-name">US Dollar</div>
+        <div class="pf-sub">5,000.00 USDB</div>
+      </div>
+      <div>
+        <div class="pf-value">$5,000</div>
+        <div class="pf-change pf-down">0.0%</div>
+      </div>
+    </div>
+    <div class="pf-row">
+      <div class="pf-icon" style="background:#381993;color:#fff;">T</div>
+      <div class="pf-info">
+        <div class="pf-name">Treasury Bond</div>
+        <div class="pf-sub">10 TBOND</div>
+      </div>
+      <div>
+        <div class="pf-value">$10,000</div>
+        <div class="pf-change pf-up">+4.8%</div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="carousel-dots" id="carouselDots">
+    <div class="carousel-dot active" data-index="0"></div>
+    <div class="carousel-dot" data-index="1"></div>
+    <div class="carousel-dot" data-index="2"></div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  var paused = false;
+  var scene = document.getElementById('scene');
+  scene.addEventListener('mouseenter', function() { paused = true; });
+  scene.addEventListener('mouseleave', function() { paused = false; });
+
+  function wait(ms) {
+    return new Promise(function(resolve) {
+      var elapsed = 0;
+      function tick() {
+        if (paused) { requestAnimationFrame(tick); return; }
+        elapsed += 16;
+        if (elapsed >= ms) resolve();
+        else setTimeout(tick, 16);
+      }
+      setTimeout(tick, 16);
+    });
+  }
+
+  function showEl(id) {
+    document.getElementById(id).classList.add('show');
+  }
+
+  var isMobile = window.matchMedia('(max-width: 640px)').matches;
+
+  function run() {
+    if (isMobile) {
+      runCarousel();
+    } else {
+      wait(200).then(function() { showEl('walletCard'); });
+      wait(450).then(function() { showEl('paymentCard'); });
+      wait(650).then(function() { showEl('portfolioCard'); });
+    }
+  }
+
+  function runCarousel() {
+    var cards = [
+      document.getElementById('walletCard'),
+      document.getElementById('paymentCard'),
+      document.getElementById('portfolioCard')
+    ];
+    var dots = document.querySelectorAll('.carousel-dot');
+    var current = 0;
+
+    function showCard(index) {
+      cards.forEach(function(c) { c.classList.remove('mobile-active'); });
+      dots.forEach(function(d) { d.classList.remove('active'); });
+      cards[index].classList.add('show', 'mobile-active');
+      dots[index].classList.add('active');
+    }
+
+    showCard(0);
+
+    setInterval(function() {
+      current = (current + 1) % cards.length;
+      showCard(current);
+    }, 3000);
+  }
+
+  if (typeof IntersectionObserver !== 'undefined') {
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { obs.disconnect(); run(); }
+    }, { threshold: 0.3 });
+    obs.observe(scene);
+  } else {
+    run();
+  }
+})();
+</script>
+</body>
+</html>
