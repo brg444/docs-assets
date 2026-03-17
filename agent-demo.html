@@ -87,6 +87,7 @@ var K="#E8664A",S="#2E7D32",C="#9E9EB0",N="#7B1FA2",I="#1A1A2E",P="#6B6B80",PL="
 
 var introLines=[
   [{t:"import ",c:K},{t:"{ Wallet, MnemonicIdentity }",c:I},{t:" from ",c:K},{t:"'@arkade-os/sdk'",c:S}],
+  [{t:"import ",c:K},{t:"{ ArkadeLightning, BoltzSwapProvider }",c:I},{t:" from ",c:K},{t:"'@arkade-os/boltz-swap'",c:S}],
   null,
   [{t:"const ",c:K},{t:"identity ",c:I},{t:"= ",c:P},{t:"MnemonicIdentity",c:PL},{t:".fromMnemonic(mnemonic)",c:P}],
   null,
@@ -113,6 +114,14 @@ var groups=[
       [{t:")",c:P}],
     ],
     result:{text:"50,000 sats sent",detail:"instant offchain settlement"},
+  },
+  {
+    lines:[
+      [{t:"// Pay a Lightning invoice",c:C}],
+      [{t:"const ",c:K},{t:"lightning ",c:I},{t:"= ",c:P},{t:"new ",c:K},{t:"ArkadeLightning",c:PL},{t:"(wallet, ",c:P},{t:"new ",c:K},{t:"BoltzSwapProvider",c:PL},{t:"())",c:P}],
+      [{t:"await ",c:K},{t:"lightning.sendLightningPayment",c:I},{t:"(",c:P},{t:"'lnbc1...invoice'",c:S},{t:")",c:P}],
+    ],
+    result:{text:"Lightning payment sent",detail:"via submarine swap"},
   },
 ];
 

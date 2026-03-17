@@ -72,7 +72,7 @@ body { background: transparent; font-family: 'Geist', 'SF Pro', -apple-system, '
 var K="#E8664A",S="#2E7D32",C="#9E9EB0",N="#7B1FA2",I="#1A1A2E",P="#6B6B80",PL="#4A22B0";
 
 var introLines=[
-  [{t:"import ",c:K},{t:"{ MnemonicIdentity, Wallet }",c:I},{t:" from ",c:K},{t:"'@arkade-os/sdk'",c:S}],
+  [{t:"import ",c:K},{t:"{ MnemonicIdentity, Wallet, VtxoManager }",c:I},{t:" from ",c:K},{t:"'@arkade-os/sdk'",c:S}],
   null,
   [{t:"// 1. Connect to an Arkade operator",c:C}],
   [{t:"const ",c:K},{t:"wallet ",c:I},{t:"= ",c:P},{t:"await ",c:K},{t:"Wallet.create",c:I},{t:"({",c:P}],
@@ -94,10 +94,11 @@ var groups=[
   },
   {
     lines:[
-      [{t:"// 3. Settle \u2014 check what needs anchoring",c:C}],
-      [{t:"const ",c:K},{t:"vtxos ",c:I},{t:"= ",c:P},{t:"await ",c:K},{t:"wallet.getVtxos",c:I},{t:"()",c:P}],
+      [{t:"// 3. Settle \u2014 anchor to Bitcoin L1",c:C}],
+      [{t:"const ",c:K},{t:"manager ",c:I},{t:"= ",c:P},{t:"new ",c:K},{t:"VtxoManager",c:PL},{t:"(wallet)",c:P}],
+      [{t:"const ",c:K},{t:"settled ",c:I},{t:"= ",c:P},{t:"await ",c:K},{t:"manager.renewVtxos",c:I},{t:"()",c:P}],
     ],
-    result:{text:"3 VTXOs loaded",detail:"1 preconfirmed, 2 settled"},
+    result:{text:"VTXOs settled",detail:"anchored to Bitcoin"},
   },
   {
     lines:[
